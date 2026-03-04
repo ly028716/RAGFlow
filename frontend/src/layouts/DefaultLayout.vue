@@ -6,6 +6,7 @@ import { Plus, ChatDotRound, Document, Cpu, Setting, User, SwitchButton, ArrowDo
 import { useAuthStore } from '@/stores/auth'
 import { useConversationStore } from '@/stores/conversation'
 import ChatList from '@/components/chat/ChatList.vue'
+import OpenClawStatus from '@/components/OpenClawStatus.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -122,6 +123,7 @@ onMounted(() => {
       <header class="app-header">
         <div class="header-title">{{ pageTitle }}</div>
         <div class="header-actions">
+          <OpenClawStatus />
           <el-dropdown trigger="click">
             <div class="user-info">
               <el-avatar :size="32" :src="authStore.avatar || undefined">

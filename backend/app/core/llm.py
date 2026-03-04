@@ -134,7 +134,7 @@ class PatchedTongyi(OriginalTongyi):
                 if text_content is not None and text_content:
                     # DashScope API在流式模式下返回的是增量内容，不是累积内容
                     # 所以直接使用text_content作为delta
-                    delta = text_content
+                    delta = str(text_content)  # 确保delta是字符串类型
                     last_text += delta  # 累积完整文本用于调试
                     chunk_count += 1
                     logger.debug(f"[_stream] 生成chunk #{chunk_count}, delta长度={len(delta)}")

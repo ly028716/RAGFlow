@@ -319,6 +319,37 @@ class AgentToolsSettings(BaseSettings):
         return [h.strip().lower() for h in self.agent_tool_allowed_hosts.split(",") if h.strip()]
 
 
+class OpenClawSettings(BaseSettings):
+    """OpenClaw Gateway 配置"""
+
+    model_config = SettingsConfigDict(env_prefix="OPENCLAW_", case_sensitive=False)
+
+    gateway_url: str = Field(
+        default="http://localhost:19001",
+        description="OpenClaw Gateway URL"
+    )
+    timeout: float = Field(
+        default=30.0,
+        ge=5.0,
+        le=300.0,
+        description="请求超时时间（秒）"
+    )
+    max_retries: int = Field(
+        default=3,
+        ge=0,
+        le=10,
+        description="最大重试次数"
+    )
+    enabled: bool = Field(
+        default=True,
+        description="是否启用 OpenClaw 集成"
+    )
+    api_tokens: str = Field(
+        default="",
+        description="API Token列表（逗号分隔），用于 OpenClaw 调用时的身份验证"
+    )
+
+
 class AppSettings(BaseSettings):
     """应用主配置"""
 
@@ -426,6 +457,9 @@ class Settings:
 
         # Agent工具配置
         self.agent_tools = AgentToolsSettings()
+
+        # OpenClaw集成配置
+        self.openclaw = OpenClawSettings()
 
     def validate_all(self) -> bool:
         """

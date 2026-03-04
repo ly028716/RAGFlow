@@ -27,7 +27,27 @@
       "Bash(docker logs:*)",
       "Bash(docker ps:*)",
       "Bash(ls:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(docker:*)",
+      "Bash(echo:*)",
+      "Bash(xargs:*)",
+      "Bash(uvicorn app.main:app --reload --host 0.0.0.0 --port 8000)",
+      "Bash(timeout 5 tail -f C:UsersADMINI~1AppDataLocalTempclaudeE--IDEWorkplaces-VS-RAGAgentLangChaintasksb148c9c.output)",
+      "WebSearch",
+      "Skill(product)",
+      "Bash(wsl:*)",
+      "Skill(architect)",
+      "Skill(backend-dev)",
+      "Skill(frontend-dev)",
+      "Skill(test-agent)",
+      "Bash(lsof:*)",
+      "Bash(git checkout:*)",
+      "Bash(\"docs/Phase1-用户故事与验收测试.md\":*)",
+      "Bash(python3:*)",
+      "Bash(find:*)",
+      "Bash(alembic revision:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(git add:*)"
     ]
   }
 }

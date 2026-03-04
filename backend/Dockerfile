@@ -1,5 +1,5 @@
 # Dockerfile for AI智能助手系统后端
-FROM python:3.11-slim
+FROM python:3.11-slim-bookworm
 
 # Set working directory
 WORKDIR /app

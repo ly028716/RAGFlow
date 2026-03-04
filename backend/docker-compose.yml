@@ -47,6 +47,32 @@ services:
       retries: 5
     command: redis-server --appendonly yes
 
+  # Frontend Application
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: ai_assistant_frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_BASE_URL: /api/v1
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+    networks:
+      - ai_assistant_network
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5173"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
   # Backend Application
   backend:
     build:
@@ -143,6 +169,12 @@ services:
       
       # WebSocket
       WS_HEARTBEAT_INTERVAL: ${WS_HEARTBEAT_INTERVAL:-30}
+
+      # OpenClaw Gateway Configuration
+      OPENCLAW_GATEWAY_URL: ${OPENCLAW_GATEWAY_URL:-http://host.docker.internal:19001}
+      OPENCLAW_TIMEOUT: ${OPENCLAW_TIMEOUT:-30.0}
+      OPENCLAW_MAX_RETRIES: ${OPENCLAW_MAX_RETRIES:-3}
+      OPENCLAW_ENABLED: ${OPENCLAW_ENABLED:-True}
     ports:
       - "${BACKEND_PORT:-8000}:8000"
       - "${METRICS_PORT:-9090}:9090"
