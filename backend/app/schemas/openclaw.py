@@ -4,6 +4,7 @@ OpenClaw API Schemas
 定义 OpenClaw 相关的请求和响应模型
 """
 
+from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -155,8 +156,8 @@ class ToolResponse(BaseModel):
     auth_type: str = Field(..., description="认证类型")
     status: str = Field(..., description="工具状态")
     is_builtin: bool = Field(..., description="是否为内置工具")
-    created_at: str = Field(..., description="创建时间")
-    updated_at: str = Field(..., description="更新时间")
+    created_at: datetime = Field(..., description="创建时间")
+    updated_at: datetime = Field(..., description="更新时间")
 
     class Config:
         from_attributes = True

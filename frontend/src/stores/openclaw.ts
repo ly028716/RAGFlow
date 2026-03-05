@@ -15,6 +15,9 @@ export interface OpenClawUIConfig {
   notificationDuration: number // 通知显示时长（毫秒）
   autoRetry: boolean // 是否自动重试连接
   healthCheckInterval: number // 健康检查间隔（秒）
+  retryBaseDelay: number // 重试基础延迟（毫秒）
+  retryMaxDelay: number // 重试最大延迟（毫秒）
+  retryJitterFactor: number // 抖动因子（0-1）
 }
 
 /**
@@ -24,7 +27,10 @@ const DEFAULT_CONFIG: OpenClawUIConfig = {
   showNotifications: true,
   notificationDuration: 3000,
   autoRetry: true,
-  healthCheckInterval: 30
+  healthCheckInterval: 30,
+  retryBaseDelay: 5000, // 5秒基础延迟
+  retryMaxDelay: 60000, // 60秒最大延迟
+  retryJitterFactor: 0.3 // 30%抖动
 }
 
 export const useOpenClawStore = defineStore('openclaw', () => {
@@ -73,6 +79,30 @@ export const useOpenClawStore = defineStore('openclaw', () => {
         return 'OpenClaw 连接中...'
     }
   })
+
+  /**
+   * 计算指数退避延迟（带抖动）
+   *
+   * @param retryCount 当前重试次数（从1开始）
+   * @returns 延迟时间（毫秒）
+   */
+  function calculateBackoffDelay(retryCount: number): number {
+    const { retryBaseDelay, retryMaxDelay, retryJitterFactor } = config.value
+
+    // 指数退避：baseDelay * 2^(retryCount - 1)
+    const exponentialDelay = retryBaseDelay * Math.pow(2, retryCount - 1)
+
+    // 限制最大延迟
+    const cappedDelay = Math.min(exponentialDelay, retryMaxDelay)
+
+    // 添加抖动：delay * (1 ± jitterFactor)
+    // 例如：jitterFactor=0.3 时，抖动范围为 [0.7 * delay, 1.3 * delay]
+    const jitterRange = cappedDelay * retryJitterFactor
+    const jitter = (Math.random() * 2 - 1) * jitterRange // -jitterRange 到 +jitterRange
+    const finalDelay = Math.max(0, cappedDelay + jitter)
+
+    return Math.round(finalDelay)
+  }
 
   /**
    * 从 localStorage 加载配置
@@ -170,7 +200,10 @@ export const useOpenClawStore = defineStore('openclaw', () => {
 
     // 如果启用自动重试且重试次数未超限
     if (config.value.autoRetry && retryCount.value < 3) {
-      setTimeout(() => checkHealth(), 5000) // 5秒后重试
+      // 使用指数退避 + 抖动计算延迟
+      const delay = calculateBackoffDelay(retryCount.value)
+      console.log(`OpenClaw 重试 ${retryCount.value}/3，延迟 ${delay}ms`)
+      setTimeout(() => checkHealth(), delay)
     } else if (retryCount.value >= 3) {
       // 重试失败，进入长期降级模式
       enterLongTermDegradation()
@@ -181,14 +214,22 @@ export const useOpenClawStore = defineStore('openclaw', () => {
    * 进入长期降级模式
    */
   function enterLongTermDegradation() {
-    // 每5分钟尝试恢复一次
+    // 每5分钟尝试恢复一次，添加抖动避免雷鸣群效应
     if (recoveryCheckTimer) {
       clearInterval(recoveryCheckTimer)
     }
+
+    const baseInterval = 5 * 60 * 1000 // 5分钟
+    const jitterRange = baseInterval * config.value.retryJitterFactor
+    const jitter = (Math.random() * 2 - 1) * jitterRange
+    const interval = Math.max(0, baseInterval + jitter)
+
+    console.log(`OpenClaw 进入长期降级模式，恢复检查间隔 ${Math.round(interval / 1000)}s`)
+
     recoveryCheckTimer = window.setInterval(() => {
       retryCount.value = 0
       checkHealth()
-    }, 5 * 60 * 1000) // 5分钟
+    }, interval)
   }
 
   /**
@@ -281,6 +322,7 @@ export const useOpenClawStore = defineStore('openclaw', () => {
     startHealthCheck,
     stopHealthCheck,
     manualReconnect,
-    updateConfig
+    updateConfig,
+    calculateBackoffDelay // 导出用于测试
   }
 })

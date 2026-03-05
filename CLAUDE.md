@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a full-stack AI assistant system with RAG (Retrieval-Augmented Generation) and Agent capabilities, built for enterprise-grade knowledge management and intelligent conversation.
+RAGFlow is a full-stack RAG (Retrieval-Augmented Generation) knowledge base system with Agent capabilities, built for enterprise-grade knowledge management and intelligent conversation.
 
 **Stack:**
 - Backend: FastAPI 0.104+ + LangChain 1.0 + Python 3.10+

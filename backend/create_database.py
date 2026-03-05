@@ -5,6 +5,7 @@
 """
 
 import sys
+import os
 import pymysql
 from pathlib import Path
 
@@ -19,13 +20,13 @@ def create_database():
     print("=" * 60)
     print("创建数据库")
     print("=" * 60)
-    
-    # 直接使用配置的连接信息
-    host = "localhost"
-    port = 3306
-    username = "root"
-    password = "Ly028716"
-    database = "ai_assistant"
+
+    # 从环境变量读取连接信息
+    host = os.getenv("MYSQL_HOST", "localhost")
+    port = int(os.getenv("MYSQL_PORT", "3306"))
+    username = os.getenv("MYSQL_USER", "root")
+    password = os.getenv("MYSQL_ROOT_PASSWORD", "root")
+    database = os.getenv("MYSQL_DATABASE", "ai_assistant")
     
     print(f"\n连接信息:")
     print(f"  - 主机: {host}")

@@ -1,6 +1,6 @@
-# AI 智能助手 - 前端
+# RAGFlow - 前端
 
-基于 Vue 3 + TypeScript + Element Plus 的 AI 智能助手系统前端。
+基于 Vue 3 + TypeScript + Element Plus 的 RAGFlow 知识库问答系统前端。
 
 ## 技术栈
 

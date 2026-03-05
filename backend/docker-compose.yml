@@ -4,12 +4,12 @@ services:
   # MySQL Database
   mysql:
     image: mysql:8.0
-    container_name: ai_assistant_mysql
+    container_name: ragflow_mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-ai_assistant}
-      MYSQL_USER: ${MYSQL_USER:-ai_user}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-ragflow}
+      MYSQL_USER: ${MYSQL_USER:-ragflow_user}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-ai_password}
       TZ: Asia/Shanghai
     ports:
@@ -18,7 +18,7 @@ services:
       - mysql_data:/var/lib/mysql
       - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql:ro
     networks:
-      - ai_assistant_network
+      - ragflow_network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
       interval: 10s
@@ -30,7 +30,7 @@ services:
   # Redis Cache
   redis:
     image: redis:7.0-alpine
-    container_name: ai_assistant_redis
+    container_name: ragflow_redis
     restart: unless-stopped
     environment:
       TZ: Asia/Shanghai
@@ -39,7 +39,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - ai_assistant_network
+      - ragflow_network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -52,7 +52,7 @@ services:
     build:
       context: ../frontend
       dockerfile: Dockerfile
-    container_name: ai_assistant_frontend
+    container_name: ragflow_frontend
     restart: unless-stopped
     environment:
       VITE_API_BASE_URL: /api/v1
@@ -62,7 +62,7 @@ services:
       - ../frontend:/app
       - /app/node_modules
     networks:
-      - ai_assistant_network
+      - ragflow_network
     depends_on:
       backend:
         condition: service_healthy
@@ -78,11 +78,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ai_assistant_backend
+    container_name: ragflow_backend
     restart: unless-stopped
     environment:
       # Application Settings
-      APP_NAME: ${APP_NAME:-AI智能助手系统}
+      APP_NAME: ${APP_NAME:-RAGFlow}
       APP_VERSION: ${APP_VERSION:-0.1.0}
       DEBUG: ${DEBUG:-False}
       ENVIRONMENT: ${ENVIRONMENT:-production}
@@ -92,7 +92,7 @@ services:
       PORT: 8000
       
       # Database Configuration
-      DATABASE_URL: mysql+pymysql://${MYSQL_USER:-ai_user}:${MYSQL_PASSWORD:-ai_password}@mysql:3306/${MYSQL_DATABASE:-ai_assistant}
+      DATABASE_URL: mysql+pymysql://${MYSQL_USER:-ragflow_user}:${MYSQL_PASSWORD:-ragflow_password}@mysql:3306/${MYSQL_DATABASE:-ragflow}
       DB_POOL_SIZE: ${DB_POOL_SIZE:-10}
       DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-20}
       DB_POOL_RECYCLE: ${DB_POOL_RECYCLE:-3600}
@@ -175,6 +175,13 @@ services:
       OPENCLAW_TIMEOUT: ${OPENCLAW_TIMEOUT:-30.0}
       OPENCLAW_MAX_RETRIES: ${OPENCLAW_MAX_RETRIES:-3}
       OPENCLAW_ENABLED: ${OPENCLAW_ENABLED:-True}
+
+      # Web Scraper Configuration
+      SCRAPER_MAX_CONCURRENT_TASKS: ${SCRAPER_MAX_CONCURRENT_TASKS:-3}
+      SCRAPER_DEFAULT_TIMEOUT: ${SCRAPER_DEFAULT_TIMEOUT:-30000}
+      SCRAPER_URL_WHITELIST: ${SCRAPER_URL_WHITELIST:-}
+      SCRAPER_ENABLE_SCREENSHOT: ${SCRAPER_ENABLE_SCREENSHOT:-False}
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
     ports:
       - "${BACKEND_PORT:-8000}:8000"
       - "${METRICS_PORT:-9090}:9090"
@@ -183,7 +190,7 @@ services:
       - ./uploads:/app/uploads
       - ./vector_db:/app/vector_db
     networks:
-      - ai_assistant_network
+      - ragflow_network
     depends_on:
       mysql:
         condition: service_healthy
@@ -197,12 +204,12 @@ services:
       start_period: 40s
 
 networks:
-  ai_assistant_network:
+  ragflow_network:
     driver: bridge
-    name: ai_assistant_network
+    name: ragflow_network
 
 volumes:
   mysql_data:
-    name: ai_assistant_mysql_data
+    name: ragflow_mysql_data
   redis_data:
-    name: ai_assistant_redis_data
+    name: ragflow_redis_data

@@ -21,6 +21,7 @@ from app.api.v1.system import router as system_router
 from app.api.v1.tools import router as tools_router
 from app.api.v1.user import router as user_router
 from app.api.v1.verification import router as verification_router
+from app.api.v1.web_scraper import router as web_scraper_router
 
 # 创建v1 API路由器
 api_router = APIRouter(prefix="/api/v1")
@@ -41,6 +42,7 @@ api_router.include_router(verification_router)
 api_router.include_router(prompts_router)
 api_router.include_router(user_router)
 api_router.include_router(kb_permissions_router)
+api_router.include_router(web_scraper_router)
 
 
 # 导出
@@ -61,4 +63,5 @@ __all__ = [
     "prompts_router",
     "user_router",
     "kb_permissions_router",
+    "web_scraper_router",
 ]

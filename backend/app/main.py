@@ -186,6 +186,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     except Exception as e:
         logger.error(f"Redis初始化失败: {str(e)}")
 
+    # 初始化Web Scraper调度器
+    try:
+        from app.core.redis import get_async_redis_client
+        from app.core.scheduler import initialize_scheduler
+
+        async_redis = get_async_redis_client()
+        await initialize_scheduler(async_redis, max_concurrent_tasks=5)
+        logger.info("Web Scraper调度器已启动")
+    except Exception as e:
+        logger.error(f"启动Web Scraper调度器失败: {str(e)}")
+
     # 初始化向量数据库
     try:
         from app.core.vector_store import get_vector_store_manager
@@ -234,11 +245,21 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         except Exception as e:
             logger.error(f"关闭定时任务调度器失败: {str(e)}")
 
+    # 关闭Web Scraper调度器
+    try:
+        from app.core.scheduler import shutdown_scheduler
+
+        await shutdown_scheduler()
+        logger.info("Web Scraper调度器已关闭")
+    except Exception as e:
+        logger.error(f"关闭Web Scraper调度器失败: {str(e)}")
+
     # 关闭Redis连接
     try:
-        from app.core.redis import close_redis
+        from app.core.redis import close_redis, close_async_redis
 
         close_redis()
+        await close_async_redis()
         logger.info("Redis连接已关闭")
     except Exception as e:
         logger.error(f"关闭Redis连接失败: {str(e)}")

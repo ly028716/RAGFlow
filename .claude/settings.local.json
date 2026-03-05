@@ -47,7 +47,15 @@
       "Bash(find:*)",
       "Bash(alembic revision:*)",
       "Bash(git check-ignore:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(alembic current:*)",
+      "Bash(backend/tests/services/test_openclaw_tool_service.py:*)",
+      "Bash(alembic downgrade:*)",
+      "Bash(chmod +x:*)",
+      "Bash(\"E:\\\\IDEWorkplaces\\\\VS\\\\RAGFlow\\\\docs\\\\OpenClaw手动验收测试清单.md\":*)",
+      "Bash(\"E:\\\\IDEWorkplaces\\\\VS\\\\RAGFlow\\\\docs\\\\OpenClaw组件测试报告.md\":*)"
     ]
   }
 }

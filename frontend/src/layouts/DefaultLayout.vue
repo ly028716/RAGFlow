@@ -2,11 +2,12 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
-import { Plus, ChatDotRound, Document, Cpu, Setting, User, SwitchButton, ArrowDown, MagicStick, Expand, Fold } from '@element-plus/icons-vue'
+import { Plus, ChatDotRound, Document, Cpu, Setting, User, SwitchButton, ArrowDown, MagicStick, Expand, Fold, Monitor } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { useConversationStore } from '@/stores/conversation'
 import ChatList from '@/components/chat/ChatList.vue'
 import OpenClawStatus from '@/components/OpenClawStatus.vue'
+import DegradationBanner from '@/components/DegradationBanner.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -20,6 +21,7 @@ const pageTitle = computed(() => {
     '/chat': '智能对话',
     '/knowledge': '知识库管理',
     '/agent': 'Agent 工具',
+    '/web-scraper': '网页采集',
     '/settings': '系统设置'
   }
   const basePath = '/' + route.path.split('/')[1]
@@ -94,6 +96,10 @@ onMounted(() => {
           <el-icon><Cpu /></el-icon>
           <span v-show="!sidebarCollapsed">Agent 工具</span>
         </router-link>
+        <router-link to="/web-scraper" class="nav-item" :class="{ active: route.path === '/web-scraper' }">
+          <el-icon><Monitor /></el-icon>
+          <span v-show="!sidebarCollapsed">网页采集</span>
+        </router-link>
         <router-link to="/settings" class="nav-item" :class="{ active: route.path === '/settings' }">
           <el-icon><Setting /></el-icon>
           <span v-show="!sidebarCollapsed">系统设置</span>
@@ -145,6 +151,9 @@ onMounted(() => {
           </el-dropdown>
         </div>
       </header>
+
+      <!-- 降级提示横幅 -->
+      <DegradationBanner />
 
       <div class="content-wrapper">
         <slot />

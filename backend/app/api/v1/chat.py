@@ -26,6 +26,7 @@ from app.dependencies import get_current_user
 from app.langchain_integration.chains import (ChatConfig, ConversationManager,
                                               get_conversation_manager)
 from app.langchain_integration.rag_chain import get_rag_manager
+from app.services.enhanced_conversation_service import get_enhanced_conversation_service
 from app.middleware.rate_limiter import rate_limit_llm
 from app.models.knowledge_base_permission import PermissionType
 from app.models.message import MessageRole
@@ -164,8 +165,19 @@ async def chat(
         # 转换配置
         config = _convert_chat_config(chat_request.config)
 
-        # 调用LLM或RAG
-        if chat_request.knowledge_base_ids:
+        # 调用LLM、RAG或增强型对话
+        if chat_request.config and chat_request.config.mode.value == "enhanced":
+            # 使用增强型对话服务（结合OpenClaw Agent和RAG）
+            enhanced_service = get_enhanced_conversation_service()
+            enhanced_response = await enhanced_service.chat(
+                question=chat_request.content,
+                knowledge_base_ids=chat_request.knowledge_base_ids,
+                conversation_id=str(chat_request.conversation_id),
+                chat_history=history,
+            )
+            response_content = enhanced_response.get("answer", "")
+            tokens_used = enhanced_response.get("tokens_used", 0)
+        elif chat_request.knowledge_base_ids:
             # 批量验证知识库权限
             kb_permission_service = KnowledgeBasePermissionService(db)
             has_permission, failed_ids = kb_permission_service.check_permissions_batch(
@@ -386,7 +398,16 @@ async def stream_chat(
 
         try:
             stream_generator = None
-            if chat_request.knowledge_base_ids:
+            if chat_request.config and chat_request.config.mode.value == "enhanced":
+                # 使用增强型对话服务（结合OpenClaw Agent和RAG）
+                enhanced_service = get_enhanced_conversation_service()
+                stream_generator = enhanced_service.stream_chat(
+                    question=chat_request.content,
+                    knowledge_base_ids=chat_request.knowledge_base_ids,
+                    conversation_id=str(final_conversation_id),
+                    chat_history=history,
+                )
+            elif chat_request.knowledge_base_ids:
                 rag_manager = get_rag_manager()
                 stream_generator = rag_manager.stream_query(
                     knowledge_base_ids=chat_request.knowledge_base_ids,

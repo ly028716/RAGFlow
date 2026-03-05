@@ -9,6 +9,7 @@ from typing import Generator, Optional
 
 import redis
 from redis import ConnectionPool, Redis
+from redis.asyncio import Redis as AsyncRedis
 from redis.exceptions import ConnectionError as RedisConnectionError
 from redis.exceptions import RedisError
 
@@ -36,6 +37,9 @@ redis_pool = ConnectionPool(
 
 # 创建Redis客户端实例
 redis_client: Optional[Redis] = None
+
+# 创建异步Redis客户端实例
+async_redis_client: Optional[AsyncRedis] = None
 
 
 def get_redis_client() -> Redis:
@@ -98,6 +102,29 @@ def ping_redis() -> bool:
         return False
 
 
+def get_async_redis_client() -> AsyncRedis:
+    """
+    获取异步Redis客户端实例
+
+    使用单例模式，确保整个应用使用同一个异步Redis客户端。
+    用于需要异步操作的场景，如任务调度器。
+
+    Returns:
+        AsyncRedis: 异步Redis客户端实例
+    """
+    global async_redis_client
+    if async_redis_client is None:
+        async_redis_client = AsyncRedis(
+            host=settings.redis.redis_host,
+            port=settings.redis.redis_port,
+            password=settings.redis.redis_password,
+            db=settings.redis.redis_db,
+            decode_responses=True,
+            encoding="utf-8",
+        )
+    return async_redis_client
+
+
 def close_redis() -> None:
     """
     关闭Redis连接
@@ -111,6 +138,18 @@ def close_redis() -> None:
 
     if redis_pool is not None:
         redis_pool.disconnect()
+
+
+async def close_async_redis() -> None:
+    """
+    关闭异步Redis连接
+
+    在应用关闭时调用，清理异步Redis连接。
+    """
+    global async_redis_client
+    if async_redis_client is not None:
+        await async_redis_client.close()
+        async_redis_client = None
 
 
 # Redis键命名空间常量
@@ -166,9 +205,12 @@ class RedisKeys:
 __all__ = [
     "redis_pool",
     "redis_client",
+    "async_redis_client",
     "get_redis_client",
+    "get_async_redis_client",
     "get_redis",
     "ping_redis",
     "close_redis",
+    "close_async_redis",
     "RedisKeys",
 ]

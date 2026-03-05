@@ -1,0 +1,204 @@
+# Production Docker Compose Configuration
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: ragflow_mysql_prod
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: Asia/Shanghai
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql:ro
+    networks:
+      - ragflow_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+  # Redis Cache
+  redis:
+    image: redis:7.0-alpine
+    container_name: ragflow_redis_prod
+    restart: always
+    environment:
+      TZ: Asia/Shanghai
+    volumes:
+      - redis_data:/data
+    networks:
+      - ragflow_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+
+  # Backend Application
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ragflow_backend_prod
+    restart: always
+    environment:
+      # Application Settings
+      APP_NAME: ${APP_NAME}
+      APP_VERSION: ${APP_VERSION}
+      DEBUG: "False"
+      ENVIRONMENT: production
+
+      # Server Configuration
+      HOST: 0.0.0.0
+      PORT: 8000
+
+      # Database Configuration
+      DATABASE_URL: mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-20}
+      DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-40}
+      DB_POOL_RECYCLE: ${DB_POOL_RECYCLE:-3600}
+
+      # Redis Configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_DB: ${REDIS_DB:-0}
+
+      # JWT Configuration
+      SECRET_KEY: ${SECRET_KEY}
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_DAYS: ${ACCESS_TOKEN_EXPIRE_DAYS:-7}
+      REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-30}
+
+      # Password Security
+      BCRYPT_ROUNDS: 12
+
+      # Login Security
+      MAX_LOGIN_ATTEMPTS: ${MAX_LOGIN_ATTEMPTS:-5}
+      ACCOUNT_LOCKOUT_MINUTES: ${ACCOUNT_LOCKOUT_MINUTES:-15}
+
+      # Tongyi Qianwen API
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY}
+      TONGYI_MODEL_NAME: ${TONGYI_MODEL_NAME:-qwen-turbo}
+      TONGYI_TEMPERATURE: ${TONGYI_TEMPERATURE:-0.7}
+      TONGYI_MAX_TOKENS: ${TONGYI_MAX_TOKENS:-2000}
+
+      # Vector Database (Chroma)
+      CHROMA_PERSIST_DIRECTORY: /app/vector_db
+      CHROMA_COLLECTION_NAME: ${CHROMA_COLLECTION_NAME:-documents}
+
+      # Embeddings
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-v1}
+
+      # File Upload
+      UPLOAD_DIR: /app/uploads
+      MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-10}
+
+      # Document Processing
+      CHUNK_SIZE: ${CHUNK_SIZE:-1000}
+      CHUNK_OVERLAP: ${CHUNK_OVERLAP:-200}
+
+      # RAG Configuration
+      RAG_TOP_K: ${RAG_TOP_K:-5}
+      RAG_SIMILARITY_THRESHOLD: ${RAG_SIMILARITY_THRESHOLD:-0.7}
+
+      # User Quota
+      DEFAULT_MONTHLY_QUOTA: ${DEFAULT_MONTHLY_QUOTA:-100000}
+
+      # Rate Limiting
+      RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-100}
+      RATE_LIMIT_LOGIN_PER_MINUTE: ${RATE_LIMIT_LOGIN_PER_MINUTE:-5}
+      RATE_LIMIT_LLM_PER_MINUTE: ${RATE_LIMIT_LLM_PER_MINUTE:-20}
+
+      # Logging
+      LOG_LEVEL: INFO
+      LOG_FILE: /app/logs/app.log
+      LOG_MAX_BYTES: ${LOG_MAX_BYTES:-10485760}
+      LOG_BACKUP_COUNT: ${LOG_BACKUP_COUNT:-10}
+
+      # CORS
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      CORS_ALLOW_CREDENTIALS: "True"
+
+      # Monitoring
+      ENABLE_METRICS: "True"
+      METRICS_PORT: 9090
+
+      # Background Tasks
+      ENABLE_SCHEDULER: "True"
+      QUOTA_RESET_CRON: "0 0 1 * *"
+
+      # WebSocket
+      WS_HEARTBEAT_INTERVAL: 30
+
+      # OpenClaw Gateway Configuration
+      OPENCLAW_GATEWAY_URL: ${OPENCLAW_GATEWAY_URL}
+      OPENCLAW_TIMEOUT: ${OPENCLAW_TIMEOUT:-30.0}
+      OPENCLAW_MAX_RETRIES: ${OPENCLAW_MAX_RETRIES:-3}
+      OPENCLAW_ENABLED: ${OPENCLAW_ENABLED:-True}
+
+      # Web Scraper Configuration
+      SCRAPER_MAX_CONCURRENT_TASKS: ${SCRAPER_MAX_CONCURRENT_TASKS:-3}
+      SCRAPER_DEFAULT_TIMEOUT: ${SCRAPER_DEFAULT_TIMEOUT:-30000}
+      SCRAPER_URL_WHITELIST: ${SCRAPER_URL_WHITELIST}
+      SCRAPER_ENABLE_SCREENSHOT: ${SCRAPER_ENABLE_SCREENSHOT:-False}
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+    volumes:
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
+      - ./vector_db:/app/vector_db
+    networks:
+      - ragflow_network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/system/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Frontend with Nginx
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile.prod
+    container_name: ragflow_frontend_prod
+    restart: always
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    networks:
+      - ragflow_network
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  ragflow_network:
+    driver: bridge
+    name: ragflow_network_prod
+
+volumes:
+  mysql_data:
+    name: ragflow_mysql_data_prod
+  redis_data:
+    name: ragflow_redis_data_prod

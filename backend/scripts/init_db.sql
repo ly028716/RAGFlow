@@ -6,13 +6,13 @@ SET NAMES utf8mb4;
 SET CHARACTER SET utf8mb4;
 
 -- Create database if not exists (already handled by docker-compose, but kept for reference)
--- CREATE DATABASE IF NOT EXISTS ai_assistant CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- CREATE DATABASE IF NOT EXISTS ragflow CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Use the database
-USE ai_assistant;
+USE ragflow;
 
 -- Grant privileges (if needed)
--- GRANT ALL PRIVILEGES ON ai_assistant.* TO 'ai_user'@'%';
+-- GRANT ALL PRIVILEGES ON ragflow.* TO 'ragflow_user'@'%';
 -- FLUSH PRIVILEGES;
 
 -- Log initialization

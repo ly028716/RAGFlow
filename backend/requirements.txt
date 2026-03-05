@@ -35,6 +35,12 @@ docx2txt==0.9
 unstructured==0.11.2
 markdown==3.5.1
 
+# Web Scraping
+playwright==1.40.0
+beautifulsoup4==4.12.2
+lxml==4.9.3
+html2text==2020.1.16
+
 # Background Tasks
 apscheduler==3.10.4
 

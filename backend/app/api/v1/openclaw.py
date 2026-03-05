@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from app.core.openclaw_client import (
     OpenClawAPIError,
     OpenClawTimeoutError,
+    OpenClawCircuitBreakerError,
     get_openclaw_client,
 )
 from app.dependencies import get_current_admin_user, get_current_user, get_db
@@ -95,6 +96,13 @@ async def send_message_to_openclaw(
         raise HTTPException(
             status_code=status.HTTP_504_GATEWAY_TIMEOUT,
             detail=f"OpenClaw 请求超时: {str(e)}",
+        )
+
+    except OpenClawCircuitBreakerError as e:
+        logger.warning(f"OpenClaw 熔断器已打开: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="OpenClaw 服务暂时不可用，系统已启用降级模式",
         )
 
     except OpenClawAPIError as e:

@@ -88,6 +88,12 @@ class KnowledgeBase(Base):
         cascade="all, delete-orphan",
         order_by="Document.created_at.desc()",
     )
+    scraper_tasks = relationship(
+        "WebScraperTask",
+        back_populates="knowledge_base",
+        cascade="all, delete-orphan",
+        order_by="desc(WebScraperTask.created_at)",
+    )
 
     # 复合索引
     __table_args__ = (

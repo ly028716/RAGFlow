@@ -342,7 +342,7 @@ nano .env  # 编辑配置文件
 # 5. 启动MySQL和Redis（使用Docker或本地安装）
 docker run -d --name mysql -p 3306:3306 \
   -e MYSQL_ROOT_PASSWORD=rootpassword \
-  -e MYSQL_DATABASE=ai_assistant \
+  -e MYSQL_DATABASE=ragflow \
   mysql:8.0
 
 docker run -d --name redis -p 6379:6379 redis:7.0
@@ -423,20 +423,20 @@ gunicorn app.main:app \
 
 #### 3. 使用Systemd服务
 
-创建 `/etc/systemd/system/ai-assistant.service`:
+创建 `/etc/systemd/system/ragflow.service`:
 
 ```ini
 [Unit]
-Description=AI Assistant Backend Service
+Description=RAGFlow Backend Service
 After=network.target mysql.service redis.service
 
 [Service]
 Type=notify
 User=www-data
 Group=www-data
-WorkingDirectory=/opt/ai-assistant/backend
-Environment="PATH=/opt/ai-assistant/backend/venv/bin"
-ExecStart=/opt/ai-assistant/backend/venv/bin/gunicorn app.main:app \
+WorkingDirectory=/opt/ragflow/backend
+Environment="PATH=/opt/ragflow/backend/venv/bin"
+ExecStart=/opt/ragflow/backend/venv/bin/gunicorn app.main:app \
   --workers 4 \
   --worker-class uvicorn.workers.UvicornWorker \
   --bind 0.0.0.0:8000
@@ -450,17 +450,17 @@ WantedBy=multi-user.target
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable ai-assistant
-sudo systemctl start ai-assistant
-sudo systemctl status ai-assistant
+sudo systemctl enable ragflow
+sudo systemctl start ragflow
+sudo systemctl status ragflow
 ```
 
 #### 4. Nginx反向代理
 
-创建 `/etc/nginx/sites-available/ai-assistant`:
+创建 `/etc/nginx/sites-available/ragflow`:
 
 ```nginx
-upstream ai_assistant {
+upstream ragflow {
     server 127.0.0.1:8000;
 }
 
@@ -482,7 +482,7 @@ server {
     client_max_body_size 10M;
 
     location / {
-        proxy_pass http://ai_assistant;
+        proxy_pass http://ragflow;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -491,7 +491,7 @@ server {
 
     # WebSocket支持
     location /ws {
-        proxy_pass http://ai_assistant;
+        proxy_pass http://ragflow;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -501,7 +501,7 @@ server {
 
     # SSE流式响应
     location /api/v1/chat/stream {
-        proxy_pass http://ai_assistant;
+        proxy_pass http://ragflow;
         proxy_set_header Connection '';
         proxy_http_version 1.1;
         chunked_transfer_encoding off;
@@ -514,7 +514,7 @@ server {
 启用配置：
 
 ```bash
-sudo ln -s /etc/nginx/sites-available/ai-assistant /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/ragflow /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl reload nginx
 ```
@@ -536,22 +536,22 @@ SECRET_KEY=your-secret-key-here-at-least-32-characters
 
 # MySQL配置
 MYSQL_ROOT_PASSWORD=rootpassword
-MYSQL_PASSWORD=ai_password
-MYSQL_DATABASE=ai_assistant
-MYSQL_USER=ai_user
+MYSQL_PASSWORD=ragflow_password
+MYSQL_DATABASE=ragflow
+MYSQL_USER=ragflow_user
 ```
 
 #### 可选配置
 
 ```bash
 # 应用配置
-APP_NAME=AI智能助手系统
+APP_NAME=RAGFlow
 APP_VERSION=1.0.0
 DEBUG=False
 API_V1_PREFIX=/api/v1
 
 # 数据库配置
-DATABASE_URL=mysql+pymysql://ai_user:ai_password@localhost:3306/ai_assistant
+DATABASE_URL=mysql+pymysql://ragflow_user:ragflow_password@localhost:3306/ragflow
 DB_POOL_SIZE=10
 DB_MAX_OVERFLOW=20
 DB_POOL_RECYCLE=3600
@@ -1077,7 +1077,7 @@ def test_login(client, test_user):
 # locustfile.py
 from locust import HttpUser, task, between
 
-class AIAssistantUser(HttpUser):
+class RAGFlowUser(HttpUser):
     wait_time = between(1, 3)
     
     def on_start(self):
@@ -1275,7 +1275,7 @@ grep "slow query" logs/app.log
 grep "duration" logs/app.log | awk '{print $NF}' | sort -n
 
 # 查看内存使用
-docker stats ai_assistant_backend
+docker stats ragflow_backend
 ```
 
 ## 📖 相关文档
@@ -1318,8 +1318,8 @@ docker stats ai_assistant_backend
    ```bash
    # 在GitHub上Fork项目
    # 克隆你的Fork
-   git clone https://github.com/your-username/ai-assistant.git
-   cd ai-assistant/backend
+   git clone https://github.com/your-username/ragflow.git
+   cd ragflow/backend
    ```
 
 2. **创建分支**
@@ -1384,7 +1384,7 @@ docker stats ai_assistant_backend
 ```
 MIT License
 
-Copyright (c) 2025 AI Assistant Team
+Copyright (c) 2025 RAGFlow Team
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -1424,8 +1424,8 @@ SOFTWARE.
 
 ## 📞 联系方式
 
-- **项目主页**: https://github.com/your-org/ai-assistant
-- **问题反馈**: https://github.com/your-org/ai-assistant/issues
+- **项目主页**: https://github.com/your-org/ragflow
+- **问题反馈**: https://github.com/your-org/ragflow/issues
 - **邮箱**: support@example.com
 - **文档**: https://docs.example.com
 
@@ -1482,8 +1482,8 @@ SOFTWARE.
 
 <div align="center">
 
-**[⬆ 回到顶部](#ai智能助手系统---后端)**
+**[⬆ 回到顶部](#ragflow---后端)**
 
-Made with ❤️ by AI Assistant Team
+Made with ❤️ by RAGFlow Team
 
 </div>

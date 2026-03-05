@@ -44,6 +44,12 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, title: 'Agent' }
   },
   {
+    path: '/web-scraper',
+    name: 'WebScraper',
+    component: () => import('@/views/WebScraperView.vue'),
+    meta: { requiresAuth: true, title: '网页采集' }
+  },
+  {
     path: '/settings',
     name: 'Settings',
     component: () => import('@/views/settings/SettingsView.vue'),

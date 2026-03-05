@@ -350,6 +350,70 @@ class OpenClawSettings(BaseSettings):
     )
 
 
+class ScraperSettings(BaseSettings):
+    """Web Scraper配置"""
+
+    model_config = SettingsConfigDict(env_prefix="SCRAPER_", case_sensitive=False)
+
+    max_concurrent_tasks: int = Field(
+        default=5,
+        ge=1,
+        le=20,
+        description="最大并发采集任务数"
+    )
+    default_timeout: int = Field(
+        default=30000,
+        ge=5000,
+        le=300000,
+        description="默认超时时间（毫秒）"
+    )
+    enable_screenshot: bool = Field(
+        default=False,
+        description="是否启用截图功能"
+    )
+    user_agent: str = Field(
+        default="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        description="默认User-Agent"
+    )
+    url_whitelist: str = Field(
+        default="",
+        description="URL白名单（逗号分隔），为空则禁止所有外网访问。支持通配符如*.example.com"
+    )
+    allow_private_networks: bool = Field(
+        default=False,
+        description="是否允许访问内网地址（仅用于开发测试）"
+    )
+    max_retry_times: int = Field(
+        default=3,
+        ge=0,
+        le=10,
+        description="最大重试次数"
+    )
+    retry_delay: int = Field(
+        default=5,
+        ge=1,
+        le=60,
+        description="重试延迟（秒）"
+    )
+    cache_ttl: int = Field(
+        default=86400,
+        ge=300,
+        le=604800,
+        description="已采集URL缓存时间（秒），默认24小时"
+    )
+
+    @property
+    def url_whitelist_list(self) -> List[str]:
+        """返回URL白名单列表"""
+        if not self.url_whitelist:
+            return []
+        return [
+            domain.strip().lower()
+            for domain in self.url_whitelist.split(",")
+            if domain.strip()
+        ]
+
+
 class AppSettings(BaseSettings):
     """应用主配置"""
 
@@ -461,6 +525,9 @@ class Settings:
         # OpenClaw集成配置
         self.openclaw = OpenClawSettings()
 
+        # Web Scraper配置
+        self.scraper = ScraperSettings()
+
     def validate_all(self) -> bool:
         """
         验证所有配置的有效性
@@ -534,4 +601,6 @@ __all__ = [
     "BackgroundTaskSettings",
     "WebSocketSettings",
     "AgentToolsSettings",
+    "OpenClawSettings",
+    "ScraperSettings",
 ]
