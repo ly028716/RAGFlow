@@ -1,168 +1,30 @@
 """
-知识库权限服务
+权限管理服务模块
 
-提供知识库权限的管理功能。
+实现权限的CRUD管理功能。
 """
 
 import logging
 from typing import List, Optional, Tuple
 
-from sqlalchemy import and_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.knowledge_base import KnowledgeBase
-from app.models.knowledge_base_permission import (KnowledgeBasePermission,
-                                                  PermissionType)
+from app.models.knowledge_base_permission import KnowledgeBasePermission, PermissionType
 from app.models.user import User
-from app.schemas.knowledge_base_permission import (PermissionCreate,
-                                                   PermissionUpdate)
+from app.schemas.knowledge_base_permission import PermissionCreate, PermissionUpdate
+from app.services.knowledge_base_permission.permission_check_service import \
+    PermissionCheckService
 
 logger = logging.getLogger(__name__)
 
 
-# 权限等级映射
-PERMISSION_LEVELS = {
-    PermissionType.VIEWER.value: 1,
-    PermissionType.EDITOR.value: 2,
-    PermissionType.OWNER.value: 3,
-}
-
-
-class KnowledgeBasePermissionService:
-    """知识库权限服务"""
+class PermissionManagementService:
+    """权限管理服务"""
 
     def __init__(self, db: Session):
         self.db = db
-
-    def check_permission(
-        self,
-        kb_id: int,
-        user_id: int,
-        required_permission: str = PermissionType.VIEWER.value,
-    ) -> Tuple[bool, Optional[KnowledgeBase]]:
-        """
-        检查用户对知识库的权限
-
-        Args:
-            kb_id: 知识库ID
-            user_id: 用户ID
-            required_permission: 所需权限级别
-
-        Returns:
-            (是否有权限, 知识库对象)
-        """
-        kb = self.db.query(KnowledgeBase).filter(KnowledgeBase.id == kb_id).first()
-        if not kb:
-            return False, None
-
-        # 检查是否为超级管理员
-        user = self.db.query(User).filter(User.id == user_id).first()
-        if user and user.is_admin:
-            return True, kb
-
-        # 所有者拥有所有权限
-        if kb.user_id == user_id:
-            return True, kb
-
-        # 检查公开知识库（仅查看权限）
-        if hasattr(kb, "visibility") and kb.visibility == "public":
-            if required_permission == PermissionType.VIEWER.value:
-                return True, kb
-
-        # 检查用户权限
-        permission = (
-            self.db.query(KnowledgeBasePermission)
-            .filter(
-                KnowledgeBasePermission.knowledge_base_id == kb_id,
-                KnowledgeBasePermission.user_id == user_id,
-            )
-            .first()
-        )
-
-        if not permission:
-            return False, kb
-
-        # 权限等级检查
-        user_level = PERMISSION_LEVELS.get(permission.permission_type, 0)
-        required_level = PERMISSION_LEVELS.get(required_permission, 0)
-
-        return user_level >= required_level, kb
-
-    def check_permissions_batch(
-        self,
-        kb_ids: List[int],
-        user_id: int,
-        required_permission: str = PermissionType.VIEWER.value,
-    ) -> Tuple[bool, List[int]]:
-        """
-        批量检查用户对知识库的权限
-
-        Args:
-            kb_ids: 知识库ID列表
-            user_id: 用户ID
-            required_permission: 所需权限级别
-
-        Returns:
-            (是否全部有权限, 无权限的知识库ID列表)
-        """
-        if not kb_ids:
-            return True, []
-
-        # 检查是否为超级管理员
-        user = self.db.query(User).filter(User.id == user_id).first()
-        if user and user.is_admin:
-            return True, []
-
-        # 查询所有涉及的知识库
-        kbs = self.db.query(KnowledgeBase).filter(KnowledgeBase.id.in_(kb_ids)).all()
-        kb_map = {kb.id: kb for kb in kbs}
-
-        # 检查不存在的知识库
-        found_ids = set(kb_map.keys())
-        missing_ids = [kb_id for kb_id in kb_ids if kb_id not in found_ids]
-        if missing_ids:
-            return False, missing_ids
-
-        # 查询用户的权限记录
-        permissions = (
-            self.db.query(KnowledgeBasePermission)
-            .filter(
-                KnowledgeBasePermission.knowledge_base_id.in_(kb_ids),
-                KnowledgeBasePermission.user_id == user_id,
-            )
-            .all()
-        )
-        perm_map = {p.knowledge_base_id: p for p in permissions}
-
-        required_level = PERMISSION_LEVELS.get(required_permission, 0)
-        failed_ids = []
-
-        for kb_id in kb_ids:
-            kb = kb_map[kb_id]
-            
-            # 1. 所有者拥有所有权限
-            if kb.user_id == user_id:
-                continue
-                
-            # 2. 公开知识库（仅查看权限）
-            if (
-                hasattr(kb, "visibility") 
-                and kb.visibility == "public" 
-                and required_permission == PermissionType.VIEWER.value
-            ):
-                continue
-
-            # 3. 检查权限记录
-            permission = perm_map.get(kb_id)
-            if not permission:
-                failed_ids.append(kb_id)
-                continue
-
-            user_level = PERMISSION_LEVELS.get(permission.permission_type, 0)
-            if user_level < required_level:
-                failed_ids.append(kb_id)
-
-        return len(failed_ids) == 0, failed_ids
+        self._check_service = PermissionCheckService(db)
 
     def get_permissions(self, kb_id: int, user_id: int) -> Tuple[List[dict], int]:
         """
@@ -176,7 +38,7 @@ class KnowledgeBasePermissionService:
             (权限列表, 总数)
         """
         # 检查是否有权限查看
-        has_permission, kb = self.check_permission(
+        has_permission, kb = self._check_service.check_permission(
             kb_id, user_id, PermissionType.OWNER.value
         )
         if not has_permission:
@@ -206,8 +68,6 @@ class KnowledgeBasePermissionService:
             return [], 0
 
         # 所有者可以看到所有权限 - 使用JOIN优化查询
-        from sqlalchemy.orm import joinedload
-
         permissions = (
             self.db.query(KnowledgeBasePermission)
             .options(joinedload(KnowledgeBasePermission.user))
@@ -385,65 +245,5 @@ class KnowledgeBasePermissionService:
         logger.info(f"删除权限成功: permission_id={permission_id}")
         return True
 
-    def share_by_username(
-        self,
-        kb_id: int,
-        owner_id: int,
-        username: str,
-        permission_type: str = PermissionType.VIEWER.value,
-    ) -> Optional[KnowledgeBasePermission]:
-        """
-        通过用户名分享知识库
 
-        Args:
-            kb_id: 知识库ID
-            owner_id: 所有者ID
-            username: 目标用户名
-            permission_type: 权限类型
-
-        Returns:
-            创建的权限对象或None
-        """
-        # 查找用户
-        user = self.db.query(User).filter(User.username == username).first()
-        if not user:
-            return None
-
-        # 使用add_permission添加权限
-        data = PermissionCreate(user_id=user.id, permission_type=permission_type)
-        return self.add_permission(kb_id, owner_id, data)
-
-    def get_shared_knowledge_bases(
-        self, user_id: int, skip: int = 0, limit: int = 20
-    ) -> Tuple[List[KnowledgeBase], int]:
-        """
-        获取分享给用户的知识库列表
-
-        Args:
-            user_id: 用户ID
-            skip: 跳过数量
-            limit: 返回数量
-
-        Returns:
-            (知识库列表, 总数)
-        """
-        # 查询用户有权限的知识库（非自己创建的）
-        query = (
-            self.db.query(KnowledgeBase)
-            .join(
-                KnowledgeBasePermission,
-                KnowledgeBase.id == KnowledgeBasePermission.knowledge_base_id,
-            )
-            .filter(
-                KnowledgeBasePermission.user_id == user_id,
-                KnowledgeBase.user_id != user_id,  # 排除自己创建的
-            )
-        )
-
-        total = query.count()
-        knowledge_bases = query.offset(skip).limit(limit).all()
-
-        return knowledge_bases, total
-
-
-__all__ = ["KnowledgeBasePermissionService", "PERMISSION_LEVELS"]
+__all__ = ["PermissionManagementService"]

@@ -31,7 +31,7 @@ from app.schemas.conversation import (ConversationCreate,
                                       ExportResponse, MessageResponse,
                                       TitleGenerateRequest,
                                       TitleGenerateResponse)
-from app.services.conversation_service import (ConversationNotFoundError,
+from app.services.conversation import (ConversationNotFoundError,
                                                ConversationService)
 
 router = APIRouter(prefix="/conversations", tags=["对话管理"])

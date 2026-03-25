@@ -19,8 +19,7 @@ from app.dependencies import get_current_admin_user, get_current_user
 from app.models.user import User
 from app.schemas.quota import (QuotaResponse, QuotaUpdateRequest,
                                QuotaUpdateResponse)
-from app.services.quota_service import (InvalidQuotaValueError,
-                                        QuotaNotFoundError, QuotaService)
+from app.services.quota import InvalidQuotaValueError, QuotaNotFoundError, QuotaService
 
 logger = logging.getLogger(__name__)
 

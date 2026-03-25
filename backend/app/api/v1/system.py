@@ -23,7 +23,7 @@ from app.models.user import User
 from app.schemas.system import (HealthCheckResponse, SystemConfigResponse,
                                 SystemConfigUpdateRequest, SystemInfoResponse,
                                 UsageStatsResponse)
-from app.services.system_service import SystemService
+from app.services.system import SystemService
 
 logger = logging.getLogger(__name__)
 

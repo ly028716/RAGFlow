@@ -26,9 +26,8 @@ from app.models.knowledge_base_permission import PermissionType
 from app.models.user import User
 from app.schemas.knowledge_base import (DocumentChunkResponse, RAGQueryRequest,
                                         RAGQueryResponse)
-from app.services.knowledge_base_permission_service import \
-    KnowledgeBasePermissionService
-from app.services.quota_service import QuotaService
+from app.services.knowledge_base_permission import KnowledgeBasePermissionService
+from app.services.quota import QuotaService
 
 logger = logging.getLogger(__name__)
 

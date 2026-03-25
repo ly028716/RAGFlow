@@ -15,7 +15,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
-from app.services.quota_service import QuotaService
+from app.services.quota import QuotaService
 
 # 配置日志
 logger = logging.getLogger(__name__)

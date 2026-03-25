@@ -19,11 +19,9 @@ from app.models.user import User
 from app.schemas.auth import (MessageResponse, PasswordChangeRequest,
                               RefreshTokenRequest, TokenResponse, UserLogin,
                               UserRegister, UserResponse)
-from app.services.auth_service import (AccountLockedError, AuthService,
-                                       InvalidCredentialsError,
-                                       PasswordMismatchError,
-                                       UserAlreadyExistsError,
-                                       UserNotFoundError)
+from app.services.auth import (AccountLockedError, AuthService,
+                               InvalidCredentialsError, PasswordMismatchError,
+                               UserAlreadyExistsError, UserNotFoundError)
 from app.utils.client_ip import get_client_ip
 
 router = APIRouter(prefix="/auth", tags=["认证"])

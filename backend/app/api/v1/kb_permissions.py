@@ -20,8 +20,7 @@ from app.schemas.knowledge_base_permission import (PermissionCreate,
                                                    ShareKnowledgeBaseRequest,
                                                    VisibilityResponse,
                                                    VisibilityUpdate)
-from app.services.knowledge_base_permission_service import \
-    KnowledgeBasePermissionService
+from app.services.knowledge_base_permission import KnowledgeBasePermissionService
 
 logger = logging.getLogger(__name__)
 

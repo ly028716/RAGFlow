@@ -25,7 +25,7 @@ from app.schemas.web_scraper import (
     LogStatisticsResponse,
     TaskExecuteResponse,
 )
-from app.services.web_scraper_service import (
+from app.services.web_scraper import (
     WebScraperService,
     TaskNotFoundError,
     InvalidTaskConfigError,

@@ -33,11 +33,10 @@ from app.models.message import MessageRole
 from app.models.user import User
 from app.schemas.conversation import ChatConfig as ChatConfigSchema
 from app.schemas.conversation import ChatRequest, ChatResponse
-from app.services.conversation_service import (ConversationNotFoundError,
+from app.services.conversation import (ConversationNotFoundError,
                                                ConversationService)
-from app.services.knowledge_base_permission_service import \
-    KnowledgeBasePermissionService
-from app.services.quota_service import InsufficientQuotaError, QuotaService
+from app.services.knowledge_base_permission import KnowledgeBasePermissionService
+from app.services.quota import InsufficientQuotaError, QuotaService
 
 logger = logging.getLogger(__name__)
 

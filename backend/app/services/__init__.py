@@ -4,23 +4,18 @@
 提供业务逻辑处理服务。
 """
 
-from app.services.auth_service import (AccountLockedError, AuthService,
-                                       AuthServiceError,
-                                       InvalidCredentialsError,
-                                       PasswordMismatchError,
-                                       UserAlreadyExistsError,
-                                       UserNotFoundError)
-from app.services.conversation_service import (ConversationAccessDeniedError,
+from app.services.auth import (AccountLockedError, AuthService, AuthServiceError,
+                               InvalidCredentialsError, PasswordMismatchError,
+                               UserAlreadyExistsError, UserNotFoundError)
+from app.services.conversation import (ConversationAccessDeniedError,
                                                ConversationNotFoundError,
                                                ConversationService,
                                                ConversationServiceError)
 from app.services.file_service import FileService, file_service
-from app.services.knowledge_base_permission_service import (
+from app.services.knowledge_base_permission import (
     PERMISSION_LEVELS, KnowledgeBasePermissionService)
-from app.services.quota_service import (InsufficientQuotaError,
-                                        InvalidQuotaValueError,
-                                        QuotaNotFoundError, QuotaService,
-                                        QuotaServiceError)
+from app.services.quota import (InsufficientQuotaError, InvalidQuotaValueError,
+                                QuotaNotFoundError, QuotaService, QuotaServiceError)
 from app.services.system_prompt_service import SystemPromptService
 
 __all__ = [

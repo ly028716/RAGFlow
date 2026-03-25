@@ -28,7 +28,7 @@ from app.schemas.agent import (DeleteResponse, ExecutionListItem,
                                ExecutionListResponse, ExecutionResponse,
                                TaskExecuteRequest, ToolCreate,
                                ToolListResponse, ToolResponse, ToolUpdate)
-from app.services.agent_service import AgentService
+from app.services.agent import AgentService
 
 router = APIRouter(prefix="/agent", tags=["Agent智能代理"])
 logger = logging.getLogger(__name__)

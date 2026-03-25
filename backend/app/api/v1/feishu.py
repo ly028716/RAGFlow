@@ -22,7 +22,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.langchain_integration.rag_chain import RAGManager, get_rag_manager
 from app.models.user import User
-from app.services.conversation_service import ConversationService
+from app.services.conversation import ConversationService
 from app.services.user_service import UserService
 
 logger = logging.getLogger(__name__)
