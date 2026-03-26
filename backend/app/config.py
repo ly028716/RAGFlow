@@ -322,7 +322,13 @@ class AgentToolsSettings(BaseSettings):
 class OpenClawSettings(BaseSettings):
     """OpenClaw Gateway 配置"""
 
-    model_config = SettingsConfigDict(env_prefix="OPENCLAW_", case_sensitive=False)
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        env_prefix="OPENCLAW_",
+        case_sensitive=False,
+        extra="ignore",
+    )
 
     gateway_url: str = Field(
         default="http://localhost:19001",

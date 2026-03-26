@@ -1,7 +1,7 @@
 """add web scraper indexes for performance
 
 Revision ID: 011_add_web_scraper_indexes
-Revises: 010_add_web_scraper_tables
+Revises: 010_web_scraper
 Create Date: 2026-03-04 21:43:00.000000
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '011_add_web_scraper_indexes'
-down_revision = '010_add_web_scraper_tables'
+down_revision = '010_web_scraper'
 branch_labels = None
 depends_on = None
 

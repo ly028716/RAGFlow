@@ -55,7 +55,15 @@
       "Bash(alembic downgrade:*)",
       "Bash(chmod +x:*)",
       "Bash(\"E:\\\\IDEWorkplaces\\\\VS\\\\RAGFlow\\\\docs\\\\OpenClaw手动验收测试清单.md\":*)",
-      "Bash(\"E:\\\\IDEWorkplaces\\\\VS\\\\RAGFlow\\\\docs\\\\OpenClaw组件测试报告.md\":*)"
+      "Bash(\"E:\\\\IDEWorkplaces\\\\VS\\\\RAGFlow\\\\docs\\\\OpenClaw组件测试报告.md\":*)",
+      "Bash(openclaw gateway:*)",
+      "Bash(openclaw config:*)",
+      "Bash(taskkill:*)",
+      "Bash(source:*)",
+      "Bash(export:*)",
+      "Bash(tasklist:*)",
+      "Bash(\"E:\\\\IDEWorkplaces\\\\VS\\\\RAGFlow\\\\COMPREHENSIVE_ANALYSIS_REPORT.md\":*)",
+      "Bash(\"E:\\\\IDEWorkplaces\\\\VS\\\\RAGFlow\\\\P0_IMPLEMENTATION_PLAN.md\":*)"
     ]
   }
 }

@@ -117,6 +117,9 @@ def verify_api_token(x_api_token: Optional[str] = Header(None)) -> bool:
     # 从配置中获取有效的 API Token
     # 可以配置多个 Token，用逗号分隔
     valid_tokens = settings.openclaw.api_tokens.split(",") if hasattr(settings.openclaw, 'api_tokens') else []
+    valid_tokens = [t.strip() for t in valid_tokens if t.strip()]  # 去除空格和空字符串
+
+    logger.info(f"验证 API Token - 收到: [{x_api_token}], 有效tokens: {valid_tokens}")
 
     if not valid_tokens or x_api_token not in valid_tokens:
         logger.warning(f"无效的 API Token: {x_api_token[:10]}...")
