@@ -13,12 +13,10 @@ from app.api.v1.conversations import router as conversations_router
 from app.api.v1.documents import router as documents_router
 from app.api.v1.kb_permissions import router as kb_permissions_router
 from app.api.v1.knowledge_bases import router as knowledge_bases_router
-from app.api.v1.openclaw import router as openclaw_router
 from app.api.v1.prompts import router as prompts_router
 from app.api.v1.quota import router as quota_router
 from app.api.v1.rag import router as rag_router
 from app.api.v1.system import router as system_router
-from app.api.v1.tools import router as tools_router
 from app.api.v1.user import router as user_router
 from app.api.v1.verification import router as verification_router
 from app.api.v1.web_scraper import router as web_scraper_router
@@ -35,8 +33,6 @@ api_router.include_router(knowledge_bases_router)
 api_router.include_router(documents_router)
 api_router.include_router(rag_router)
 api_router.include_router(agent_router)
-api_router.include_router(tools_router)
-api_router.include_router(openclaw_router)
 api_router.include_router(system_router)
 api_router.include_router(verification_router)
 api_router.include_router(prompts_router)
@@ -56,8 +52,6 @@ __all__ = [
     "documents_router",
     "rag_router",
     "agent_router",
-    "tools_router",
-    "openclaw_router",
     "system_router",
     "verification_router",
     "prompts_router",

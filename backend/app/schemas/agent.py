@@ -5,7 +5,7 @@ Agent相关的Pydantic模型
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -65,8 +65,10 @@ class AgentStep(BaseModel):
     step_number: int = Field(..., description="步骤编号")
     thought: str = Field(..., description="思考过程")
     action: str = Field(..., description="执行的动作/工具")
-    action_input: Dict[str, Any] = Field(..., description="动作输入参数")
+    action_input: Union[Dict[str, Any], str] = Field(..., description="动作输入参数")
     observation: str = Field(..., description="观察结果")
+    citations: List[Dict[str, Any]] = Field(default_factory=list, description="检索引用片段")
+    citation_count: int = Field(default=0, ge=0, description="引用片段数量")
     timestamp: Optional[str] = Field(None, description="时间戳")
 
 
@@ -76,6 +78,9 @@ class TaskExecuteRequest(BaseModel):
     task: str = Field(..., min_length=1, max_length=2000, description="任务描述")
     tool_ids: Optional[List[int]] = Field(
         default=None, description="要使用的工具ID列表（可选，默认使用所有启用的工具）"
+    )
+    knowledge_base_ids: Optional[List[int]] = Field(
+        default=None, min_length=1, description="Agent 可检索的知识库 ID 范围"
     )
     max_iterations: int = Field(default=10, ge=1, le=50, description="最大迭代次数")
 

@@ -2,7 +2,7 @@ import pytest
 
 
 @pytest.mark.asyncio
-async def test_distance_to_similarity_not_zero_for_large_l2_distance():
+async def test_large_l2_distance_is_filtered_by_similarity_threshold():
     from langchain_core.documents import Document
 
     from app.langchain_integration.rag_chain import RAGManager
@@ -14,6 +14,5 @@ async def test_distance_to_similarity_not_zero_for_large_l2_distance():
 
     manager = RAGManager(vector_store_manager=_VS())
     chunks = await manager._retrieve_documents([1], "q", 1)
-    assert len(chunks) == 1
-    assert chunks[0].similarity_score > 0.0
+    assert chunks == []
 

@@ -23,12 +23,14 @@ from app.dependencies import get_current_user
 from app.middleware.rate_limiter import rate_limit_api, rate_limit_llm
 from app.models.agent_execution import ExecutionStatus
 from app.models.agent_tool import ToolType
+from app.models.knowledge_base_permission import PermissionType
 from app.models.user import User
 from app.schemas.agent import (DeleteResponse, ExecutionListItem,
                                ExecutionListResponse, ExecutionResponse,
                                TaskExecuteRequest, ToolCreate,
                                ToolListResponse, ToolResponse, ToolUpdate)
 from app.services.agent import AgentService
+from app.services.knowledge_base_permission import KnowledgeBasePermissionService
 
 router = APIRouter(prefix="/agent", tags=["Agent智能代理"])
 logger = logging.getLogger(__name__)
@@ -322,11 +324,21 @@ async def execute_task(
     """
     service = AgentService(db)
 
+    if task_data.knowledge_base_ids:
+        permissions = KnowledgeBasePermissionService(db)
+        for kb_id in task_data.knowledge_base_ids:
+            allowed, _ = permissions.check_permission(
+                kb_id, current_user.id, PermissionType.VIEWER.value
+            )
+            if not allowed:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="知识库不存在或无权访问")
+
     try:
         result = await service.execute_task(
             user_id=current_user.id,
             task=task_data.task,
             tool_ids=task_data.tool_ids,
+            knowledge_base_ids=task_data.knowledge_base_ids,
             max_iterations=task_data.max_iterations,
         )
 
@@ -367,6 +379,15 @@ async def stream_execute_task(
     """
     service = AgentService(db)
 
+    if task_data.knowledge_base_ids:
+        permissions = KnowledgeBasePermissionService(db)
+        for kb_id in task_data.knowledge_base_ids:
+            allowed, _ = permissions.check_permission(
+                kb_id, current_user.id, PermissionType.VIEWER.value
+            )
+            if not allowed:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="知识库不存在或无权访问")
+
     async def event_generator():
         """生成SSE事件"""
         try:
@@ -374,6 +395,7 @@ async def stream_execute_task(
                 user_id=current_user.id,
                 task=task_data.task,
                 tool_ids=task_data.tool_ids,
+                knowledge_base_ids=task_data.knowledge_base_ids,
                 max_iterations=task_data.max_iterations,
             ):
                 # 格式化为SSE事件

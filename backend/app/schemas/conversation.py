@@ -25,7 +25,7 @@ class ChatModeEnum(str, Enum):
     NORMAL = "normal"
     PROFESSIONAL = "professional"
     CREATIVE = "creative"
-    ENHANCED = "enhanced"  # 增强模式：结合OpenClaw Agent和知识库RAG
+    RAG = "rag"  # 基于本地知识库的检索增强生成
 
 
 class ExportFormatEnum(str, Enum):

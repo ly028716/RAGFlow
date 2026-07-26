@@ -164,18 +164,3 @@ def test_kb(db: Session, test_user: User) -> KnowledgeBase:
     db.commit()
     db.refresh(kb)
     return kb
-
-
-@pytest.fixture(scope="function", autouse=True)
-def mock_openclaw_api_tokens(monkeypatch):
-    """
-    为测试环境配置 OpenClaw API Tokens
-
-    自动应用于所有测试,使得 "test-token" 成为有效的 API Token
-    """
-    from app.config import settings
-
-    # 设置测试用的 API Token
-    monkeypatch.setattr(settings.openclaw, "api_tokens", "test-token,another-test-token")
-
-    return settings.openclaw

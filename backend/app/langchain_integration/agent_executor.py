@@ -19,12 +19,9 @@ from langchain_community.llms import Tongyi
 
 from app.config import settings
 from app.langchain_integration.tools import (
-    APICallTool,
     CalculatorTool,
     DataAnalysisTool,
-    FileOperationsTool,
-    SearchTool,
-    WeatherTool,
+    KnowledgeBaseSearchTool,
 )
 
 logger = logging.getLogger(__name__)
@@ -58,6 +55,13 @@ class StepRecordingCallback(BaseCallbackHandler):
         """当工具执行完成时调用"""
         if self.current_step:
             self.current_step["observation"] = output
+            if self.current_step.get("action") == "knowledge_base_search":
+                try:
+                    payload = json.loads(output)
+                    self.current_step["citations"] = payload.get("results", [])
+                    self.current_step["citation_count"] = payload.get("count", 0)
+                except (TypeError, json.JSONDecodeError):
+                    self.current_step["citations"] = []
             self.steps.append(self.current_step.copy())
             self.current_step = {}
 
@@ -110,7 +114,9 @@ class AgentManager:
 
         logger.info(f"AgentManager初始化完成，加载了 {len(self.builtin_tools)} 个内置工具")
 
-    def _load_builtin_tools(self) -> List[BaseTool]:
+    def _load_builtin_tools(
+        self, knowledge_base_ids: Optional[List[int]] = None
+    ) -> List[BaseTool]:
         """
         加载内置工具
 
@@ -119,11 +125,10 @@ class AgentManager:
         """
         tools = [
             CalculatorTool(),
-            SearchTool(),
-            WeatherTool(),
-            FileOperationsTool(),
             DataAnalysisTool(),
-            APICallTool(),
+            KnowledgeBaseSearchTool(
+                allowed_knowledge_base_ids=knowledge_base_ids or []
+            ),
         ]
         return tools
 
@@ -170,6 +175,7 @@ Thought: {agent_scratchpad}"""
         self,
         tool_ids: Optional[List[int]] = None,
         custom_tools: Optional[List[BaseTool]] = None,
+        knowledge_base_ids: Optional[List[int]] = None,
     ) -> List[BaseTool]:
         """
         选择要使用的工具
@@ -196,6 +202,17 @@ Thought: {agent_scratchpad}"""
         #     selected_tools.extend(db_tools)
 
         return selected_tools
+
+    @staticmethod
+    def _agent_input(task: str, knowledge_base_ids: Optional[List[int]]) -> str:
+        """Give the ReAct model the authorized KB scope needed by the search tool."""
+        if not knowledge_base_ids:
+            return task
+        ids = ", ".join(str(value) for value in knowledge_base_ids)
+        return (
+            f"允许检索的本地知识库 ID: [{ids}]。调用 knowledge_base_search 时，"
+            f"knowledge_base_ids 必须使用上述 ID。\n用户任务: {task}"
+        )
 
     async def execute_task(
         self,
@@ -226,6 +243,7 @@ Thought: {agent_scratchpad}"""
             logger.info(f"开始执行Agent任务: {task}")
 
             # 选择工具
+            self.builtin_tools = self._load_builtin_tools(knowledge_base_ids or [])
             tools = self._select_tools(tool_ids, custom_tools)
 
             if not tools:
@@ -258,7 +276,9 @@ Thought: {agent_scratchpad}"""
             )
 
             # 执行任务
-            result = await agent_executor.ainvoke({"input": task})
+            result = await agent_executor.ainvoke(
+                {"input": self._agent_input(task, knowledge_base_ids)}
+            )
 
             # 获取执行步骤
             steps = callback.get_steps()
@@ -286,6 +306,7 @@ Thought: {agent_scratchpad}"""
         task: str,
         tool_ids: Optional[List[int]] = None,
         custom_tools: Optional[List[BaseTool]] = None,
+        knowledge_base_ids: Optional[List[int]] = None,
         max_iterations: int = 10,
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
@@ -306,6 +327,7 @@ Thought: {agent_scratchpad}"""
             logger.info(f"开始流式执行Agent任务: {task}")
 
             # 选择工具
+            self.builtin_tools = self._load_builtin_tools(knowledge_base_ids or [])
             tools = self._select_tools(tool_ids, custom_tools)
 
             if not tools:
@@ -332,7 +354,9 @@ Thought: {agent_scratchpad}"""
             )
 
             last_emitted_step_index = 0
-            async for _ in agent_executor.astream({"input": task}):
+            async for _ in agent_executor.astream(
+                {"input": self._agent_input(task, knowledge_base_ids)}
+            ):
                 while last_emitted_step_index < len(callback.steps):
                     step = callback.steps[last_emitted_step_index]
                     last_emitted_step_index += 1

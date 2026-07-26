@@ -1,620 +1,125 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import {
-  VideoPlay, Check, Close, Loading, Tools, Clock
-} from '@element-plus/icons-vue'
+import { Check, Clock, Close, Loading, VideoPlay } from '@element-plus/icons-vue'
 import { useAgentStore } from '@/stores/agent'
-import type { AgentTool } from '@/types'
+import type { AgentStep, DocumentChunk } from '@/types'
+
+type Citation = DocumentChunk & { page?: number; chunk_id?: string }
+type TimelineEvent = {
+  kind: 'tool_call' | 'tool_result' | 'answer'
+  title: string
+  step?: AgentStep
+  timestamp?: string
+  input?: Record<string, unknown> | string
+  observation?: string
+  retrievalTimeMs?: number
+  sources: Citation[]
+}
 
 const agentStore = useAgentStore()
+const question = ref('')
+const knowledgeBaseIds = ref('')
+const maxIterations = ref(8)
+const canRun = computed(() => question.value.trim().length > 0 && !agentStore.executing)
+const activeSteps = computed(() => agentStore.currentExecution?.steps || agentStore.streamingSteps)
 
-// 状态
-const taskInput = ref('')
-const selectedToolIds = ref<number[]>([])
-const maxIterations = ref(10)
+function parseObservation(value: unknown): any {
+  if (!value) return {}
+  if (typeof value === 'object') return value as Record<string, any>
+  try { return JSON.parse(value as string) } catch { return {} }
+}
 
-// 计算属性
-const canExecute = computed(() => taskInput.value.trim() && !agentStore.executing)
-
-// 只显示内置工具
-const builtinTools = computed(() =>
-  agentStore.tools.filter(tool => tool.tool_type === 'builtin')
-)
-
-// 方法
-async function handleExecute() {
-  if (!taskInput.value.trim()) {
-    ElMessage.warning('请输入任务描述')
-    return
-  }
-
-  try {
-    const toolIds = selectedToolIds.value.length > 0 ? selectedToolIds.value : undefined
-    await agentStore.executeTask(taskInput.value, toolIds, maxIterations.value)
-    ElMessage.success('任务执行完成')
-  } catch (error: any) {
-    ElMessage.error(error.response?.data?.detail || '执行失败')
+function normalizeCitation(raw: any): Citation {
+  const metadata = raw?.metadata ?? {}
+  return {
+    content: String(raw?.content ?? raw?.text ?? raw?.page_content ?? metadata.content ?? ''),
+    document_name: String(raw?.document_name ?? raw?.document ?? raw?.source ?? metadata.document_name ?? metadata.source ?? '未知文档'),
+    similarity_score: Number(raw?.similarity_score ?? raw?.similarity ?? raw?.score ?? metadata.similarity_score ?? metadata.score ?? 0),
+    document_id: raw?.document_id ?? metadata.document_id,
+    chunk_index: raw?.chunk_index ?? metadata.chunk_index,
+    page: raw?.page ?? raw?.page_number ?? metadata.page ?? metadata.page_number
   }
 }
 
-function handleStreamExecute() {
-  if (!taskInput.value.trim()) {
-    ElMessage.warning('请输入任务描述')
-    return
+function citationsFrom(step: AgentStep): Citation[] {
+  const data = parseObservation(step.observation)
+  const nested = typeof data?.result === 'string' ? parseObservation(data.result) : data?.result
+  const raw = step.citations ?? data?.sources ?? data?.citations ?? data?.documents ?? data?.results ?? nested?.sources ?? nested?.results ?? (Array.isArray(data) ? data : [])
+  return Array.isArray(raw) ? raw.map(normalizeCitation) : []
+}
+
+function isRetrievalAction(action: string) {
+  return /knowledge[_ -]?base|retriev|rag/i.test(action)
+}
+
+const timeline = computed<TimelineEvent[]>(() => {
+  const events: TimelineEvent[] = []
+  for (const step of activeSteps.value || []) {
+    const retrieval = isRetrievalAction(step.action || '')
+    events.push({ kind: 'tool_call', title: retrieval ? '知识库检索' : `工具调用：${step.action || 'unknown'}`,
+      step, timestamp: step.timestamp, input: step.action_input, sources: [] })
+    const data = parseObservation(step.observation)
+    const nested = typeof data?.result === 'string' ? parseObservation(data.result) : data?.result
+    events.push({ kind: 'tool_result', title: retrieval ? '检索结果' : '工具结果', step,
+      timestamp: step.timestamp, observation: typeof step.observation === 'string' ? step.observation : JSON.stringify(step.observation),
+      retrievalTimeMs: Number(data?.retrieval_time_ms ?? data?.elapsed_ms ?? nested?.retrieval_time_ms) || undefined,
+      sources: citationsFrom(step) })
   }
-
-  const toolIds = selectedToolIds.value.length > 0 ? selectedToolIds.value : undefined
-  agentStore.streamExecuteTask(taskInput.value, toolIds, maxIterations.value)
-}
-
-async function handleToggleTool(tool: AgentTool) {
-  try {
-    await agentStore.toggleTool(tool.id, !tool.is_enabled)
-    ElMessage.success(tool.is_enabled ? '已禁用' : '已启用')
-  } catch (error: any) {
-    ElMessage.error(error.response?.data?.detail || '操作失败')
-  }
-}
-
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleString('zh-CN')
-}
-
-function getStatusIcon(status: string) {
-  const icons: Record<string, any> = {
-    pending: Clock,
-    running: Loading,
-    completed: Check,
-    failed: Close
-  }
-  return icons[status] || Clock
-}
-
-function getStatusType(status: string): string {
-  const types: Record<string, string> = {
-    pending: 'info',
-    running: 'warning',
-    completed: 'success',
-    failed: 'danger'
-  }
-  return types[status] || 'info'
-}
-
-function getStatusText(status: string): string {
-  const texts: Record<string, string> = {
-    pending: '待执行',
-    running: '执行中',
-    completed: '已完成',
-    failed: '失败'
-  }
-  return texts[status] || status
-}
-
-onMounted(() => {
-  agentStore.fetchTools()
-  agentStore.fetchExecutions()
+  const answer = agentStore.currentExecution?.result || agentStore.streamingResult
+  if (answer) events.push({ kind: 'answer', title: '最终回答', observation: answer, sources: [] })
+  return events
 })
+
+async function runQuery() {
+  if (!canRun.value) return
+  try { await agentStore.executeTask(question.value.trim(), undefined, maxIterations.value, parseKnowledgeBaseIds()); ElMessage.success('RAG Agent 执行完成') }
+  catch (error: any) { ElMessage.error(error?.response?.data?.detail || '执行失败') }
+}
+function streamQuery() { if (canRun.value) agentStore.streamExecuteTask(question.value.trim(), undefined, maxIterations.value, parseKnowledgeBaseIds()) }
+function parseKnowledgeBaseIds() {
+  const ids = knowledgeBaseIds.value.split(',').map(value => Number(value.trim())).filter(value => Number.isInteger(value) && value > 0)
+  return ids.length ? ids : undefined
+}
+function statusType(status: string) { return ({ pending: 'info', running: 'warning', completed: 'success', failed: 'danger' } as Record<string, string>)[status] || 'info' }
+function statusIcon(status: string) { return ({ pending: Clock, running: Loading, completed: Check, failed: Close } as Record<string, any>)[status] || Clock }
+function scorePercent(score: number) { return `${Math.round(Math.max(0, Math.min(1, score)) * 100)}%` }
+function inputText(input?: Record<string, unknown> | string) { return input ? (typeof input === 'string' ? input : JSON.stringify(input)) : '' }
+function observationText(event: TimelineEvent) { return event.observation && !event.sources.length ? event.observation : '' }
+
+onMounted(() => agentStore.fetchExecutions())
 </script>
 
 <template>
-  <div class="agent-view">
-    <div class="agent-layout">
-      <!-- 左侧：工具列表 -->
-      <aside class="tools-sidebar">
-        <div class="tools-header">
-          <h3>内置工具</h3>
-        </div>
+  <div class="rag-agent-view">
+    <header class="page-header"><div><h2>RAG Agent 调试台</h2><p>查看知识库检索工具调用、引用片段与生成耗时。</p></div><el-tag type="success" effect="plain">仅本地知识库</el-tag></header>
+    <section class="query-panel"><el-input v-model="question" type="textarea" :rows="3" maxlength="2000" show-word-limit placeholder="输入基于知识库的问题" /><el-input v-model="knowledgeBaseIds" class="kb-input" placeholder="知识库 ID（逗号分隔，例如 1,2）" /><div class="query-actions"><label>最大步数 <el-input-number v-model="maxIterations" :min="1" :max="30" size="small" /></label><div><el-button type="primary" :icon="VideoPlay" :loading="agentStore.executing" :disabled="!canRun" @click="runQuery">执行检索</el-button><el-button :icon="VideoPlay" :loading="agentStore.executing" :disabled="!canRun" @click="streamQuery">流式调试</el-button></div></div></section>
 
-        <div class="tools-list" v-loading="agentStore.loading">
-          <template v-if="builtinTools.length > 0">
-            <div v-for="tool in builtinTools" :key="tool.id" class="tool-card">
-              <div class="tool-header-row">
-                <div class="tool-icon">
-                  <el-icon :size="20"><Tools /></el-icon>
-                </div>
-                <div class="tool-name-col">
-                  <span class="tool-name">{{ tool.name }}</span>
-                </div>
-                <el-switch
-                  :model-value="tool.is_enabled"
-                  @change="handleToggleTool(tool)"
-                  size="small"
-                />
-              </div>
-              <p class="tool-desc">{{ tool.description }}</p>
-            </div>
-          </template>
-          <div v-else class="empty-tools">
-            <el-icon :size="48" color="#909399"><Tools /></el-icon>
-            <h4>系统内置工具未初始化</h4>
-            <p class="empty-desc">
-              系统需要初始化内置工具（计算器、搜索、天气查询等）才能使用 Agent 功能。
-            </p>
-            <el-alert type="info" :closable="false" style="margin-top: 16px;">
-              <template #title>
-                <span style="font-weight: 500;">如何初始化？</span>
-              </template>
-              <div style="font-size: 13px; line-height: 1.6; margin-top: 4px;">
-                请联系系统管理员运行以下命令初始化内置工具：<br>
-                <code style="background: #f5f7fa; padding: 2px 8px; border-radius: 3px; margin-top: 4px; display: inline-block;">
-                  python backend/scripts/seed_data.py
-                </code>
-              </div>
-            </el-alert>
-          </div>
-        </div>
-      </aside>
+    <section v-if="timeline.length" class="trace-panel"><h3>执行与引用时间线</h3><el-timeline>
+      <el-timeline-item v-for="(event, index) in timeline" :key="`${event.kind}-${index}`" :timestamp="event.timestamp" placement="top">
+        <el-card shadow="never" class="timeline-card">
+          <div class="event-heading"><strong>{{ event.title }}</strong><el-tag size="small" effect="plain">{{ event.kind }}</el-tag><span v-if="event.retrievalTimeMs !== undefined" class="duration">{{ event.retrievalTimeMs }} ms</span></div>
+          <p v-if="event.step?.thought && event.kind === 'tool_call'" class="thought">{{ event.step.thought }}</p>
+          <pre v-if="event.kind === 'tool_call' && event.input">{{ inputText(event.input) }}</pre>
+          <p v-if="observationText(event)" class="observation">{{ observationText(event) }}</p>
+          <div v-if="event.sources.length" class="citations"><div v-for="(source, sourceIndex) in event.sources" :key="sourceIndex" class="citation"><div><strong>{{ source.document_name }}</strong><span v-if="source.page !== undefined"> · 第 {{ source.page }} 页</span><span v-if="source.chunk_index !== undefined"> · 片段 {{ source.chunk_index }}</span><el-tag size="small" type="success">{{ scorePercent(source.similarity_score) }}</el-tag></div><p>{{ source.content }}</p></div></div>
+        </el-card>
+      </el-timeline-item>
+    </el-timeline></section>
+    <section v-else class="trace-panel"><el-empty description="提交问题后显示检索时间线" /></section>
 
-      <!-- 右侧：任务执行 -->
-      <main class="execution-main">
-        <div class="execution-header">
-          <h2>Agent 任务执行</h2>
-        </div>
-
-        <div class="execution-content">
-          <!-- 任务输入区 -->
-          <div class="task-input-section">
-            <el-input
-              v-model="taskInput"
-              type="textarea"
-              :rows="3"
-              placeholder="请描述您要执行的任务，例如：搜索最新的AI新闻并总结..."
-              maxlength="2000"
-              show-word-limit
-            />
-            <div class="action-bar">
-              <div class="config-inline">
-                <span>最大迭代:</span>
-                <el-input-number v-model="maxIterations" :min="1" :max="50" size="small" style="width: 100px" />
-              </div>
-              <div class="buttons">
-                <el-button 
-                  type="primary" 
-                  :icon="VideoPlay" 
-                  :loading="agentStore.executing"
-                  :disabled="!canExecute"
-                  @click="handleExecute"
-                >
-                  执行
-                </el-button>
-                <el-button 
-                  :icon="VideoPlay" 
-                  :loading="agentStore.executing"
-                  :disabled="!canExecute"
-                  @click="handleStreamExecute"
-                >
-                  流式
-                </el-button>
-              </div>
-            </div>
-          </div>
-
-          <!-- 执行结果/时间线 -->
-          <div class="result-timeline" v-if="agentStore.currentExecution || agentStore.streamingSteps.length > 0">
-            <h3>执行过程</h3>
-            <div class="steps-container">
-              <div class="timeline-line"></div>
-              <div class="steps-list">
-                <template v-for="(step, index) in (agentStore.currentExecution?.steps || agentStore.streamingSteps)" :key="index">
-                  <div class="step-item">
-                    <div class="step-marker"></div>
-                    <div class="step-body">
-                      <div class="step-title">
-                        <span class="step-action">{{ step.action }}</span>
-                        <span class="step-num">Step {{ step.step_number }}</span>
-                      </div>
-                      <div class="step-details">
-                        <div class="detail-row" v-if="step.thought">
-                          <span class="label">Thought:</span>
-                          <span class="content">{{ step.thought }}</span>
-                        </div>
-                        <div class="detail-row" v-if="step.action_input">
-                          <span class="label">Input:</span>
-                          <code class="content code">{{ JSON.stringify(step.action_input) }}</code>
-                        </div>
-                        <div class="detail-row" v-if="step.observation">
-                          <span class="label">Observation:</span>
-                          <span class="content">{{ step.observation }}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </template>
-              </div>
-            </div>
-
-            <!-- 最终结果 -->
-            <div class="final-result-card" v-if="agentStore.currentExecution?.result || agentStore.streamingResult">
-              <div class="result-header">
-                <el-icon><Check /></el-icon>
-                <span>最终结果</span>
-              </div>
-              <div class="result-body">
-                {{ agentStore.currentExecution?.result || agentStore.streamingResult }}
-              </div>
-            </div>
-          </div>
-          
-          <!-- 执行历史入口 (简化) -->
-          <div class="history-link-section">
-             <el-divider>执行历史</el-divider>
-             <div class="history-mini-list">
-                <template v-if="agentStore.executions.length > 0">
-                  <div 
-                    v-for="exec in agentStore.executions.slice(0, 5)" 
-                    :key="exec.execution_id" 
-                    class="history-mini-item"
-                    @click="agentStore.fetchExecution(exec.execution_id)"
-                  >
-                    <el-tag :type="getStatusType(exec.status)" size="small">{{ getStatusText(exec.status) }}</el-tag>
-                    <span class="task-summary">{{ exec.task }}</span>
-                    <span class="time">{{ formatDate(exec.created_at) }}</span>
-                  </div>
-                </template>
-                <div v-else class="no-history">暂无历史记录</div>
-             </div>
-          </div>
-        </div>
-      </main>
-    </div>
+    <section class="history-panel"><h3>最近调试记录</h3><el-empty v-if="!agentStore.executions.length" description="暂无调试记录" /><el-table v-else :data="agentStore.executions.slice(0, 8)" size="small" @row-click="row => agentStore.fetchExecution(row.execution_id)"><el-table-column prop="task" label="问题" show-overflow-tooltip /><el-table-column prop="status" label="状态" width="110"><template #default="{ row }"><el-tag :type="statusType(row.status)" size="small"><el-icon><component :is="statusIcon(row.status)" /></el-icon>{{ row.status }}</el-tag></template></el-table-column><el-table-column prop="created_at" label="时间" width="180" /></el-table></section>
   </div>
 </template>
 
-<style scoped lang="scss">
-.agent-view {
-  height: 100%;
-  padding: 0;
-  overflow: hidden;
-  background: var(--el-bg-color);
-}
-
-.agent-layout {
-  display: flex;
-  height: 100%;
-  
-  .tools-sidebar {
-    width: 320px;
-    border-right: 1px solid var(--el-border-color-light);
-    display: flex;
-    flex-direction: column;
-    background: #fff;
-    
-    .tools-header {
-      padding: 16px;
-      border-bottom: 1px solid var(--el-border-color-light);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      
-      h3 {
-        margin: 0;
-        font-size: 16px;
-        font-weight: 600;
-      }
-    }
-    
-    .tools-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-  }
-  
-  .execution-main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    background: var(--el-bg-color-page);
-    
-    .execution-header {
-      padding: 16px 24px;
-      background: #fff;
-      border-bottom: 1px solid var(--el-border-color-light);
-      
-      h2 {
-        margin: 0;
-        font-size: 18px;
-        font-weight: 600;
-      }
-    }
-    
-    .execution-content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-      max-width: 900px;
-      margin: 0 auto;
-      width: 100%;
-    }
-  }
-}
-
-.tool-card {
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
-  padding: 12px;
-  background: #fff;
-  transition: all 0.2s;
-  
-  &:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    border-color: var(--el-border-color);
-  }
-  
-  .tool-header-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 8px;
-    
-    .tool-icon {
-      width: 32px;
-      height: 32px;
-      background: var(--el-color-primary-light-9);
-      color: var(--el-color-primary);
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .tool-name-col {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      
-      .tool-name {
-        font-weight: 500;
-        font-size: 14px;
-      }
-    }
-  }
-  
-  .tool-desc {
-    margin: 0;
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
-    line-height: 1.4;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-}
-
-.task-input-section {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  background: #fff;
-  padding: 16px;
-  border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-  
-  .action-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    
-    .config-inline {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      color: var(--el-text-color-regular);
-    }
-    
-    .buttons {
-      display: flex;
-      gap: 12px;
-    }
-  }
-}
-
-.result-timeline {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  
-  h3 {
-    margin: 0;
-    font-size: 16px;
-    border-left: 4px solid var(--el-color-primary);
-    padding-left: 12px;
-  }
-}
-
-.steps-container {
-  position: relative;
-  padding-left: 20px;
-  
-  .timeline-line {
-    position: absolute;
-    left: 7px;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: var(--el-border-color-light);
-  }
-}
-
-.step-item {
-  position: relative;
-  margin-bottom: 20px;
-  
-  .step-marker {
-    position: absolute;
-    left: -17px;
-    top: 16px;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--el-color-primary);
-    border: 2px solid #fff;
-    box-shadow: 0 0 0 2px var(--el-color-primary-light-5);
-  }
-  
-  .step-body {
-    background: #fff;
-    border-radius: 8px;
-    border: 1px solid var(--el-border-color-light);
-    overflow: hidden;
-    
-    .step-title {
-      background: var(--el-fill-color-light);
-      padding: 10px 16px;
-      display: flex;
-      justify-content: space-between;
-      border-bottom: 1px solid var(--el-border-color-light);
-      
-      .step-action {
-        font-weight: 600;
-        color: var(--el-color-primary);
-      }
-      .step-num {
-        font-size: 12px;
-        color: var(--el-text-color-secondary);
-      }
-    }
-    
-    .step-details {
-      padding: 12px 16px;
-      font-size: 13px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      
-      .detail-row {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        
-        .label {
-          font-weight: 500;
-          color: var(--el-text-color-primary);
-        }
-        
-        .content {
-          color: var(--el-text-color-regular);
-          line-height: 1.5;
-          
-          &.code {
-            background: var(--el-fill-color-darker);
-            padding: 8px;
-            border-radius: 4px;
-            font-family: monospace;
-            white-space: pre-wrap;
-          }
-        }
-      }
-    }
-  }
-}
-
-.final-result-card {
-  background: var(--el-color-success-light-9);
-  border: 1px solid var(--el-color-success-light-5);
-  border-radius: 8px;
-  overflow: hidden;
-  
-  .result-header {
-    padding: 10px 16px;
-    background: var(--el-color-success-light-8);
-    color: var(--el-color-success);
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  
-  .result-body {
-    padding: 16px;
-    line-height: 1.6;
-    color: var(--el-text-color-primary);
-    white-space: pre-wrap;
-  }
-}
-
-.history-link-section {
-  margin-top: 20px;
-  
-  .history-mini-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .history-mini-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px;
-    background: #fff;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.2s;
-    
-    &:hover {
-      background: var(--el-fill-color-light);
-    }
-    
-    .task-summary {
-      flex: 1;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      font-size: 13px;
-    }
-    
-    .time {
-      font-size: 12px;
-      color: var(--el-text-color-secondary);
-    }
-  }
-  
-  .no-history {
-    text-align: center;
-    color: var(--el-text-color-secondary);
-    font-size: 13px;
-    padding: 10px;
-  }
-}
-
-.empty-tools {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--el-text-color-secondary);
-
-  h4 {
-    margin: 16px 0 8px;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--el-text-color-primary);
-  }
-
-  .empty-desc {
-    margin: 0 0 16px;
-    font-size: 14px;
-    line-height: 1.6;
-    color: var(--el-text-color-regular);
-  }
-
-  code {
-    background: #f5f7fa;
-    padding: 2px 8px;
-    border-radius: 3px;
-    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-    font-size: 12px;
-    color: var(--el-color-primary);
-  }
-}
+<style scoped>
+.rag-agent-view { height: 100%; overflow: auto; padding: 24px; background: var(--el-bg-color-page); }
+.page-header, .query-actions, .event-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.page-header { margin-bottom: 20px; } h2, h3 { margin: 0; } .page-header p { margin: 8px 0 0; color: var(--el-text-color-secondary); }
+.query-panel, .trace-panel, .history-panel { margin-bottom: 20px; padding: 20px; background: #fff; border-radius: 8px; }
+.kb-input { margin-top: 12px; }
+.query-actions { margin-top: 14px; } .query-actions label { display: flex; align-items: center; gap: 8px; color: var(--el-text-color-secondary); }
+.event-heading { justify-content: flex-start; } .event-heading .duration { margin-left: auto; color: var(--el-color-primary); font-variant-numeric: tabular-nums; }
+.thought, .observation { white-space: pre-wrap; line-height: 1.6; } pre { white-space: pre-wrap; margin: 8px 0; color: var(--el-text-color-secondary); }
+.citation { margin-top: 12px; padding: 12px; border-left: 3px solid var(--el-color-success); background: var(--el-fill-color-light); } .citation .el-tag { float: right; } .citation p { margin: 8px 0 0; line-height: 1.5; }
 </style>

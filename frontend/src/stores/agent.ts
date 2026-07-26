@@ -58,13 +58,13 @@ export const useAgentStore = defineStore('agent', () => {
     return updateTool(id, { is_enabled: enabled })
   }
 
-  async function executeTask(task: string, toolIds?: number[], maxIterations?: number) {
+  async function executeTask(task: string, toolIds?: number[], maxIterations?: number, knowledgeBaseIds?: number[]) {
     executing.value = true
     streamingSteps.value = []
     streamingResult.value = ''
     
     try {
-      const result = await agentApi.executeTask({ task, tool_ids: toolIds, max_iterations: maxIterations })
+      const result = await agentApi.executeTask({ task, tool_ids: toolIds, knowledge_base_ids: knowledgeBaseIds, max_iterations: maxIterations })
       currentExecution.value = result
       return result
     } finally {
@@ -72,13 +72,13 @@ export const useAgentStore = defineStore('agent', () => {
     }
   }
 
-  function streamExecuteTask(task: string, toolIds?: number[], maxIterations?: number) {
+  function streamExecuteTask(task: string, toolIds?: number[], maxIterations?: number, knowledgeBaseIds?: number[]) {
     executing.value = true
     streamingSteps.value = []
     streamingResult.value = ''
     
     const cancel = agentApi.streamExecuteTask(
-      { task, tool_ids: toolIds, max_iterations: maxIterations },
+      { task, tool_ids: toolIds, knowledge_base_ids: knowledgeBaseIds, max_iterations: maxIterations },
       (event) => {
         if (event.type === 'step') {
           streamingSteps.value.push(event.data)

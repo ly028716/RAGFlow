@@ -39,9 +39,9 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/agent',
-    name: 'Agent',
+    name: 'RagAgent',
     component: () => import('@/views/agent/AgentView.vue'),
-    meta: { requiresAuth: true, title: 'Agent' }
+    meta: { requiresAuth: true, title: 'RAG Agent 调试台' }
   },
   {
     path: '/web-scraper',

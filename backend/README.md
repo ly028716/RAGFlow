@@ -221,8 +221,7 @@ backend/
 │   │   ├── document_loaders.py   # 文档加载器
 │   │   └── tools/                # Agent工具
 │   │       ├── calculator_tool.py
-│   │       ├── search_tool.py
-│   │       └── weather_tool.py
+│   │       └── data_analysis_tool.py
 │   │
 │   ├── tasks/                    # 后台任务
 │   │   ├── document_tasks.py     # 文档处理任务
