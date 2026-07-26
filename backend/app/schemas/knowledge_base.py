@@ -144,6 +144,8 @@ class RAGQueryResponse(BaseModel):
     answer: str = Field(..., description="生成的答案")
     sources: List[DocumentChunkResponse] = Field(..., description="参考文档片段")
     tokens_used: int = Field(..., description="消耗的token数量")
+    retrieval_time_ms: float = Field(..., description="检索耗时（毫秒）")
+    generation_time_ms: float = Field(..., description="生成耗时（毫秒）")
 
 
 class RAGStreamSourcesEvent(BaseModel):
@@ -151,6 +153,7 @@ class RAGStreamSourcesEvent(BaseModel):
 
     type: str = Field("sources", description="事件类型")
     sources: List[DocumentChunkResponse] = Field(..., description="参考文档片段")
+    retrieval_time_ms: float = Field(..., description="检索耗时（毫秒）")
 
 
 class RAGStreamTokenEvent(BaseModel):
@@ -166,6 +169,8 @@ class RAGStreamDoneEvent(BaseModel):
     type: str = Field("done", description="事件类型")
     content: str = Field(..., description="完整答案")
     tokens_used: int = Field(..., description="消耗的token数量")
+    retrieval_time_ms: float = Field(..., description="检索耗时（毫秒）")
+    generation_time_ms: float = Field(..., description="生成耗时（毫秒）")
 
 
 class RAGStreamErrorEvent(BaseModel):

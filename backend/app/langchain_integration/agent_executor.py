@@ -219,6 +219,7 @@ Thought: {agent_scratchpad}"""
         task: str,
         tool_ids: Optional[List[int]] = None,
         custom_tools: Optional[List[BaseTool]] = None,
+        knowledge_base_ids: Optional[List[int]] = None,
         max_iterations: int = 10,
         verbose: bool = True,
     ) -> Dict[str, Any]:
@@ -229,6 +230,7 @@ Thought: {agent_scratchpad}"""
             task: 要执行的任务描述
             tool_ids: 要使用的工具ID列表
             custom_tools: 自定义工具列表
+            knowledge_base_ids: 知识库检索工具允许访问的知识库ID列表
             max_iterations: 最大迭代次数
             verbose: 是否输出详细日志
 

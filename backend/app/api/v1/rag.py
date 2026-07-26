@@ -118,6 +118,8 @@ async def rag_query(
         answer=response.answer,
         sources=sources,
         tokens_used=response.tokens_used,
+        retrieval_time_ms=response.retrieval_time_ms,
+        generation_time_ms=response.generation_time_ms,
     )
 
 
@@ -178,6 +180,7 @@ async def rag_query_stream(
                     data = {
                         "type": "sources",
                         "sources": event.get("sources", []),
+                        "retrieval_time_ms": event.get("retrieval_time_ms", 0.0),
                     }
                     yield f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
 
@@ -196,6 +199,8 @@ async def rag_query_stream(
                         "type": "done",
                         "content": event.get("content", ""),
                         "tokens_used": tokens_used,
+                        "retrieval_time_ms": event.get("retrieval_time_ms", 0.0),
+                        "generation_time_ms": event.get("generation_time_ms", 0.0),
                     }
                     yield f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
 

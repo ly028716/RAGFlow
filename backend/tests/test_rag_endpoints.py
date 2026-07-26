@@ -33,6 +33,8 @@ def test_rag_query_works_with_rate_limit_decorator(
                 answer="ok",
                 sources=[DocumentChunk(content="c", document_name="d", similarity_score=0.9)],
                 tokens_used=3,
+                retrieval_time_ms=12.5,
+                generation_time_ms=34.5,
             )
 
     import app.api.v1.rag as rag_api
@@ -46,6 +48,8 @@ def test_rag_query_works_with_rate_limit_decorator(
     assert body["answer"] == "ok"
     assert body["tokens_used"] == 3
     assert body["sources"][0]["document_name"] == "d"
+    assert body["retrieval_time_ms"] == 12.5
+    assert body["generation_time_ms"] == 34.5
 
 
 def test_rag_query_stream_works_with_rate_limit_decorator(
@@ -75,9 +79,15 @@ def test_rag_query_stream_works_with_rate_limit_decorator(
 
     class _StubManager:
         async def stream_query(self, knowledge_base_ids, question, top_k=None, conversation_id=None):
-            yield {"type": "sources", "sources": []}
+            yield {"type": "sources", "sources": [], "retrieval_time_ms": 12.5}
             yield {"type": "token", "content": "ok"}
-            yield {"type": "done", "content": "ok", "tokens_used": 2}
+            yield {
+                "type": "done",
+                "content": "ok",
+                "tokens_used": 2,
+                "retrieval_time_ms": 12.5,
+                "generation_time_ms": 34.5,
+            }
 
     import app.api.v1.rag as rag_api
 
@@ -101,4 +111,9 @@ def test_rag_query_stream_works_with_rate_limit_decorator(
 
     assert any(e.get("type") == "token" for e in events)
     assert any(e.get("type") == "done" for e in events)
+    sources_event = next(e for e in events if e.get("type") == "sources")
+    done_event = next(e for e in events if e.get("type") == "done")
+    assert sources_event["retrieval_time_ms"] == 12.5
+    assert done_event["retrieval_time_ms"] == 12.5
+    assert done_event["generation_time_ms"] == 34.5
 
