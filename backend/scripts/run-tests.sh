@@ -80,16 +80,6 @@ case $TEST_TYPE in
         run_test "集成测试" "$PYTEST_CMD tests/integration/"
         ;;
 
-    "web-scraper")
-        echo "运行Web Scraper相关测试..."
-        run_test "Web Scraper核心测试" "$PYTEST_CMD tests/core/test_web_scraper.py"
-        run_test "Web Scraper调度器测试" "$PYTEST_CMD tests/core/test_scheduler.py"
-        run_test "URL验证器测试" "$PYTEST_CMD tests/core/test_url_validator.py"
-        run_test "Web Scraper服务测试" "$PYTEST_CMD tests/services/test_web_scraper_service.py"
-        run_test "Web Scraper API测试" "$PYTEST_CMD tests/api/v1/test_web_scraper.py"
-        run_test "Web Scraper集成测试" "$PYTEST_CMD tests/integration/test_web_scraper_integration.py"
-        ;;
-
     "all")
         echo "运行所有测试..."
         run_test "所有测试" "$PYTEST_CMD tests/"
@@ -97,8 +87,7 @@ case $TEST_TYPE in
 
     *)
         echo -e "${RED}错误: 未知的测试类型 '$TEST_TYPE'${NC}"
-        echo "用法: $0 [unit|service|api|integration|web-scraper|all] [true|false]"
-        echo "示例: $0 web-scraper true  # 运行Web Scraper测试并生成覆盖率报告"
+        echo "用法: $0 [unit|service|api|integration|all] [true|false]"
         exit 1
         ;;
 esac

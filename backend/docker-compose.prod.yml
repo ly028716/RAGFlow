@@ -141,12 +141,6 @@ services:
       # WebSocket
       WS_HEARTBEAT_INTERVAL: 30
 
-      # Web Scraper Configuration
-      SCRAPER_MAX_CONCURRENT_TASKS: ${SCRAPER_MAX_CONCURRENT_TASKS:-3}
-      SCRAPER_DEFAULT_TIMEOUT: ${SCRAPER_DEFAULT_TIMEOUT:-30000}
-      SCRAPER_URL_WHITELIST: ${SCRAPER_URL_WHITELIST}
-      SCRAPER_ENABLE_SCREENSHOT: ${SCRAPER_ENABLE_SCREENSHOT:-False}
-      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
     volumes:
       - ./logs:/app/logs
       - ./uploads:/app/uploads

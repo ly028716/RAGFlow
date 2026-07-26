@@ -264,13 +264,6 @@ class CacheManager:
 class CacheKeys:
     """缓存键前缀常量"""
 
-    # Web Scraper相关
-    TASK_LIST = "scraper:task:list"
-    TASK_DETAIL = "scraper:task:detail"
-    TASK_STATS = "scraper:task:stats"
-    LOG_LIST = "scraper:log:list"
-    LOG_STATS = "scraper:log:stats"
-
     # 知识库相关
     KB_LIST = "kb:list"
     KB_DETAIL = "kb:detail"

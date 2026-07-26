@@ -140,14 +140,6 @@ pytest tests/e2e/ --cov=app --cov-report=html
 - 运行数据库迁移: `alembic upgrade head`
 - 检查数据库连接字符串
 
-### 4. 任务执行失败
-**问题**: Web Scraper任务执行失败
-
-**解决方案**:
-- 检查Playwright浏览器是否已安装
-- 验证目标URL是否可访问
-- 查看任务日志获取详细错误信息
-
 ### 5. 测试数据清理
 **问题**: 测试数据未被清理
 
