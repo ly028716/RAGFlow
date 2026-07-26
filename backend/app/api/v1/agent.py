@@ -337,7 +337,6 @@ async def execute_task(
         result = await service.execute_task(
             user_id=current_user.id,
             task=task_data.task,
-            tool_ids=task_data.tool_ids,
             knowledge_base_ids=task_data.knowledge_base_ids,
             max_iterations=task_data.max_iterations,
         )
@@ -394,7 +393,6 @@ async def stream_execute_task(
             async for event in service.stream_execute_task(
                 user_id=current_user.id,
                 task=task_data.task,
-                tool_ids=task_data.tool_ids,
                 knowledge_base_ids=task_data.knowledge_base_ids,
                 max_iterations=task_data.max_iterations,
             ):

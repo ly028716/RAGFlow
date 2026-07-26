@@ -69,6 +69,8 @@ class AgentStep(BaseModel):
     observation: str = Field(..., description="观察结果")
     citations: List[Dict[str, Any]] = Field(default_factory=list, description="检索引用片段")
     citation_count: int = Field(default=0, ge=0, description="引用片段数量")
+    phase: Optional[str] = Field(None, description="受限 RAG 工作流阶段")
+    data: Dict[str, Any] = Field(default_factory=dict, description="结构化步骤数据和指标")
     timestamp: Optional[str] = Field(None, description="时间戳")
 
 
@@ -76,9 +78,6 @@ class TaskExecuteRequest(BaseModel):
     """执行任务请求模型"""
 
     task: str = Field(..., min_length=1, max_length=2000, description="任务描述")
-    tool_ids: Optional[List[int]] = Field(
-        default=None, description="要使用的工具ID列表（可选，默认使用所有启用的工具）"
-    )
     knowledge_base_ids: Optional[List[int]] = Field(
         default=None, min_length=1, description="Agent 可检索的知识库 ID 范围"
     )

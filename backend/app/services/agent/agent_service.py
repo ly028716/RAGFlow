@@ -129,13 +129,12 @@ class AgentService:
         self,
         user_id: int,
         task: str,
-        tool_ids: Optional[List[int]] = None,
         knowledge_base_ids: Optional[List[int]] = None,
         max_iterations: int = 10,
     ) -> Dict[str, Any]:
         """执行Agent任务"""
         return await self._execution_service.execute(
-            user_id=user_id, task=task, tool_ids=tool_ids,
+            user_id=user_id, task=task,
             knowledge_base_ids=knowledge_base_ids, max_iterations=max_iterations
         )
 
@@ -143,13 +142,12 @@ class AgentService:
         self,
         user_id: int,
         task: str,
-        tool_ids: Optional[List[int]] = None,
         knowledge_base_ids: Optional[List[int]] = None,
         max_iterations: int = 10,
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """流式执行Agent任务"""
         async for event in self._execution_service.stream_execute(
-            user_id=user_id, task=task, tool_ids=tool_ids,
+            user_id=user_id, task=task,
             knowledge_base_ids=knowledge_base_ids, max_iterations=max_iterations
         ):
             yield event
