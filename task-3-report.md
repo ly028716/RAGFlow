@@ -19,3 +19,11 @@
 ## Limitation
 
 The available system Python also lacks `pymysql`, so importing the project's aggregate `app.services` package cannot be used as an alternative integration harness. No dependencies were installed as part of this task.
+
+## Review follow-up
+
+- Reworked streaming execution so it emits each completed rewrite/retrieval/context stage as soon as it is available, streams LLM answer deltas, then emits citation validation and the final result.
+- Streaming persistence now records terminal `COMPLETED`/`FAILED` status, final answer, full steps and completion time; client-facing errors remain sanitized.
+- Restored the legacy `execute_task(task, tool_ids, custom_tools, max_iterations, verbose, knowledge_base_ids)` positional contract. Legacy tool ids are ignored and nonempty custom tools are rejected.
+- Replaced the direct Tongyi construction with `get_llm()` and `get_streaming_llm()` factories. The final rendered context now includes citation-tag overhead in its character budget.
+- Added focused regression coverage for the streaming order, terminal persistence, compatibility and LLM factory behavior. Focused pytest remains blocked by the same missing `apscheduler` dependency; revised files pass `py_compile`.

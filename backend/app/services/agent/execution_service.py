@@ -240,6 +240,7 @@ class TaskExecutionService:
             }
 
             # 流式执行任务
+            terminal_event_seen = False
             async for event in self.agent_manager.stream_execute_task(
                 task=task, knowledge_base_ids=knowledge_base_ids,
                 max_iterations=max_iterations
@@ -263,7 +264,32 @@ class TaskExecutionService:
                         )
                     except Exception as e:
                         logger.warning(f"WebSocket步骤通知失败: {str(e)}")
+                elif event["type"] == "result":
+                    payload = event.get("data", {})
+                    completed = self.execution_repo.update(
+                        execution.id,
+                        status=ExecutionStatus.COMPLETED,
+                        result=payload.get("result", ""),
+                        steps=payload.get("steps", execution.steps or []),
+                        completed_at=datetime.utcnow(),
+                    )
+                    if not completed:
+                        raise RuntimeError("Agent execution record was not found")
+                    terminal_event_seen = True
+                    event = {
+                        "type": "result",
+                        "data": {**payload, "execution_id": execution.id},
+                    }
                 elif event["type"] == "error":
+                    payload = event.get("data", {})
+                    self.execution_repo.update(
+                        execution.id,
+                        status=ExecutionStatus.FAILED,
+                        steps=payload.get("steps", execution.steps or []),
+                        error_message=payload.get("message", "任务执行失败"),
+                        completed_at=datetime.utcnow(),
+                    )
+                    terminal_event_seen = True
                     event = {
                         "type": "error",
                         "data": {
@@ -275,10 +301,21 @@ class TaskExecutionService:
                 # 转发事件给客户端
                 yield event
 
-            # 获取最终执行记录
-            final_execution = self.execution_repo.get_by_id(execution.id)
+                if terminal_event_seen:
+                    return
 
-            logger.info(f"Agent流式任务执行完成: execution_id={execution.id}")
+            if not terminal_event_seen:
+                message = "Agent stream ended without a terminal result"
+                self.execution_repo.update(
+                    execution.id,
+                    status=ExecutionStatus.FAILED,
+                    error_message=message,
+                    completed_at=datetime.utcnow(),
+                )
+                yield {
+                    "type": "error",
+                    "data": {"execution_id": execution.id, "message": "任务执行失败"},
+                }
 
         except Exception as e:
             logger.error(f"Agent流式任务执行失败: {str(e)}", exc_info=True)
