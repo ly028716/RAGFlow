@@ -129,6 +129,9 @@ export interface DocumentChunk {
   similarity_score: number
   document_id?: number
   chunk_index?: number
+  page?: number
+  page_number?: number
+  metadata?: Record<string, any>
 }
 
 export interface RAGQueryResponse {
@@ -164,6 +167,7 @@ export interface ToolUpdate {
 export interface TaskExecuteRequest {
   task: string
   tool_ids?: number[]
+  knowledge_base_ids?: number[]
   max_iterations?: number
 }
 
@@ -171,8 +175,10 @@ export interface AgentStep {
   step_number: number
   thought: string
   action: string
-  action_input: Record<string, any>
-  observation: string
+  action_input: Record<string, any> | string
+  observation: string | Record<string, any>
+  citations?: DocumentChunk[]
+  citation_count?: number
   timestamp?: string
 }
 

@@ -6,8 +6,6 @@ import { Plus, ChatDotRound, Document, Cpu, Setting, User, SwitchButton, ArrowDo
 import { useAuthStore } from '@/stores/auth'
 import { useConversationStore } from '@/stores/conversation'
 import ChatList from '@/components/chat/ChatList.vue'
-import OpenClawStatus from '@/components/OpenClawStatus.vue'
-import DegradationBanner from '@/components/DegradationBanner.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -20,7 +18,7 @@ const pageTitle = computed(() => {
   const titles: Record<string, string> = {
     '/chat': '智能对话',
     '/knowledge': '知识库管理',
-    '/agent': 'Agent 工具',
+    '/agent': 'RAG Agent 调试台',
     '/web-scraper': '网页采集',
     '/settings': '系统设置'
   }
@@ -94,7 +92,7 @@ onMounted(() => {
         </router-link>
         <router-link to="/agent" class="nav-item" :class="{ active: route.path === '/agent' }">
           <el-icon><Cpu /></el-icon>
-          <span v-show="!sidebarCollapsed">Agent 工具</span>
+          <span v-show="!sidebarCollapsed">RAG Agent 调试台</span>
         </router-link>
         <router-link to="/web-scraper" class="nav-item" :class="{ active: route.path === '/web-scraper' }">
           <el-icon><Monitor /></el-icon>
@@ -129,7 +127,6 @@ onMounted(() => {
       <header class="app-header">
         <div class="header-title">{{ pageTitle }}</div>
         <div class="header-actions">
-          <OpenClawStatus />
           <el-dropdown trigger="click">
             <div class="user-info">
               <el-avatar :size="32" :src="authStore.avatar || undefined">
@@ -153,8 +150,6 @@ onMounted(() => {
       </header>
 
       <!-- 降级提示横幅 -->
-      <DegradationBanner />
-
       <div class="content-wrapper">
         <slot />
       </div>

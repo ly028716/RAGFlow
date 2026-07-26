@@ -101,37 +101,6 @@ def create_builtin_tools(session) -> None:
             "is_enabled": True
         },
         {
-            "name": "search",
-            "description": "在互联网上搜索信息，获取最新的网络内容",
-            "tool_type": "builtin",
-            "config": {
-                "type": "search",
-                "max_results": 5
-            },
-            "is_enabled": True
-        },
-        {
-            "name": "weather",
-            "description": "查询指定城市的天气信息，包括温度、湿度、天气状况等",
-            "tool_type": "builtin",
-            "config": {
-                "type": "weather",
-                "units": "metric"
-            },
-            "is_enabled": True
-        },
-        {
-            "name": "file_operations",
-            "description": "执行文件操作，包括读取、写入、列出目录等文件系统操作",
-            "tool_type": "builtin",
-            "config": {
-                "type": "file_operations",
-                "allowed_operations": ["read", "write", "list", "exists"],
-                "base_path": "./workspace"
-            },
-            "is_enabled": True
-        },
-        {
             "name": "data_analysis",
             "description": "对数据进行分析和处理，支持统计计算、数据可视化、趋势分析等",
             "tool_type": "builtin",
@@ -142,17 +111,6 @@ def create_builtin_tools(session) -> None:
             },
             "is_enabled": True
         },
-        {
-            "name": "api_call",
-            "description": "调用外部API接口，支持HTTP GET/POST请求，可用于集成第三方服务",
-            "tool_type": "builtin",
-            "config": {
-                "type": "api_call",
-                "timeout": 30,
-                "max_retries": 3
-            },
-            "is_enabled": True
-        }
     ]
     
     for tool_data in tools_data:
@@ -236,11 +194,7 @@ def seed_database():
             logger.info("  Username: testuser, Password: Test123456")
             logger.info("\nBuilt-in Tools Created:")
             logger.info("  - calculator: 数学计算工具")
-            logger.info("  - search: 网络搜索工具")
-            logger.info("  - weather: 天气查询工具")
-            logger.info("  - file_operations: 文件操作工具")
             logger.info("  - data_analysis: 数据分析工具")
-            logger.info("  - api_call: API调用工具")
             logger.info("=" * 60)
             
         finally:

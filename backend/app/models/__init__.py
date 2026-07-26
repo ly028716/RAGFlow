@@ -14,8 +14,6 @@ from app.models.knowledge_base_permission import (KnowledgeBasePermission,
                                                   PermissionType)
 from app.models.login_attempt import LoginAttempt
 from app.models.message import Message, MessageRole
-from app.models.openclaw_tool import OpenClawTool, ToolStatus
-from app.models.openclaw_tool_call import CallStatus, OpenClawToolCall
 from app.models.system_prompt import SystemPrompt
 from app.models.user import User
 from app.models.user_quota import UserQuota
@@ -43,10 +41,6 @@ __all__ = [
     "SystemPrompt",
     "KnowledgeBasePermission",
     "PermissionType",
-    "OpenClawTool",
-    "ToolStatus",
-    "OpenClawToolCall",
-    "CallStatus",
     "WebScraperTask",
     "ScheduleType",
     "ScraperTaskStatus",

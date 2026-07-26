@@ -15,7 +15,7 @@ RAG查询链模块
 """
 
 import logging
-import math
+import time
 from dataclasses import dataclass
 from typing import Any, AsyncGenerator, Dict, List, Optional
 
@@ -26,21 +26,13 @@ from langchain_core.documents import Document
 from app.config import settings
 from app.core.llm import TongyiLLM, get_llm, get_streaming_llm
 from app.core.vector_store import VectorStoreManager, get_vector_store_manager
+from app.services.rag.retrieval_service import RetrievalService, distance_to_similarity
 
 logger = logging.getLogger(__name__)
 
 def _distance_to_similarity(distance: Any) -> float:
-    if distance is None:
-        return 0.0
-    try:
-        d = float(distance)
-    except (TypeError, ValueError):
-        return 0.0
-    if d < 0:
-        return 0.0
-    if d <= 2.0:
-        return max(0.0, min(1.0, 1.0 - (d / 2.0)))
-    return 1.0 / (1.0 + math.sqrt(d))
+    # Kept as a compatibility helper for callers importing this private name.
+    return distance_to_similarity(distance)
 
 
 # RAG提示模板
@@ -101,12 +93,16 @@ class RAGResponse:
     answer: str
     sources: List[DocumentChunk]
     tokens_used: int
+    retrieval_time_ms: float = 0.0
+    generation_time_ms: float = 0.0
 
     def to_dict(self) -> dict:
         return {
             "answer": self.answer,
             "sources": [s.to_dict() for s in self.sources],
             "tokens_used": self.tokens_used,
+            "retrieval_time_ms": self.retrieval_time_ms,
+            "generation_time_ms": self.generation_time_ms,
         }
 
 
@@ -158,6 +154,7 @@ class RAGManager:
             llm: LLM实例，默认使用全局实例
         """
         self.vector_store_manager = vector_store_manager or get_vector_store_manager()
+        self.retrieval_service = RetrievalService(self.vector_store_manager)
         self._llm = llm
 
         # 对话记忆存储
@@ -227,11 +224,13 @@ class RAGManager:
         )
 
         # 步骤1: 向量检索
+        retrieval_started = time.perf_counter()
         retrieved_docs = await self._retrieve_documents(
             knowledge_base_ids=knowledge_base_ids,
             question=question,
             top_k=top_k,
         )
+        retrieval_time_ms = round((time.perf_counter() - retrieval_started) * 1000, 2)
 
         logger.debug(f"检索到 {len(retrieved_docs)} 个文档片段")
 
@@ -252,9 +251,14 @@ class RAGManager:
                 question=question,
             )
 
-        # 步骤4: 调用LLM生成答案
-        llm = self._get_llm(streaming=False)
-        answer = await llm.llm.ainvoke(prompt)
+        # Do not send an empty/low-relevance context to the model.
+        generation_started = time.perf_counter()
+        if not retrieved_docs:
+            answer = "当前知识库中未找到足够相关的信息，无法基于知识库回答该问题。"
+        else:
+            llm = self._get_llm(streaming=False)
+            answer = await llm.llm.ainvoke(prompt)
+        generation_time_ms = round((time.perf_counter() - generation_started) * 1000, 2)
 
         # 步骤5: 估算token数量
         tokens_used = self._estimate_tokens(prompt + answer)
@@ -272,6 +276,8 @@ class RAGManager:
             answer=answer,
             sources=retrieved_docs,
             tokens_used=tokens_used,
+            retrieval_time_ms=retrieval_time_ms,
+            generation_time_ms=generation_time_ms,
         )
 
     async def stream_query(
@@ -309,24 +315,29 @@ class RAGManager:
 
         try:
             # 步骤1: 向量检索
+            retrieval_started = time.perf_counter()
             retrieved_docs = await self._retrieve_documents(
                 knowledge_base_ids=knowledge_base_ids,
                 question=question,
                 top_k=top_k,
             )
-
-            # 去重：按文档名称去重，保留相似度最高的chunk
-            unique_sources = {}
-            for doc in retrieved_docs:
-                doc_name = doc.document_name
-                if doc_name not in unique_sources or doc.similarity_score > unique_sources[doc_name].similarity_score:
-                    unique_sources[doc_name] = doc
+            retrieval_time_ms = round((time.perf_counter() - retrieval_started) * 1000, 2)
 
             # 先返回检索到的文档片段（已去重）
             yield {
                 "type": "sources",
-                "sources": [doc.to_dict() for doc in unique_sources.values()],
+                "sources": [doc.to_dict() for doc in retrieved_docs],
+                "retrieval_time_ms": retrieval_time_ms,
             }
+
+            if not retrieved_docs:
+                refusal = "当前知识库中未找到足够相关的信息，无法基于知识库回答该问题。"
+                yield {"type": "token", "content": refusal}
+                yield {
+                    "type": "done", "content": refusal, "tokens_used": self._estimate_tokens(refusal),
+                    "retrieval_time_ms": retrieval_time_ms, "generation_time_ms": 0.0,
+                }
+                return
 
             # 步骤2: 构建上下文和提示
             context = self._build_context(retrieved_docs)
@@ -345,6 +356,7 @@ class RAGManager:
                 )
 
             # 步骤3: 流式调用LLM
+            generation_started = time.perf_counter()
             llm = self._get_llm(streaming=True)
             full_answer = ""
 
@@ -396,6 +408,8 @@ class RAGManager:
                 "type": "done",
                 "content": full_answer,
                 "tokens_used": tokens_used,
+                "retrieval_time_ms": retrieval_time_ms,
+                "generation_time_ms": round((time.perf_counter() - generation_started) * 1000, 2),
             }
 
             logger.info(
@@ -426,25 +440,14 @@ class RAGManager:
         Returns:
             List[DocumentChunk]: 文档片段列表
         """
-        if len(knowledge_base_ids) == 1:
-            # 单知识库检索
-            results = await self.vector_store_manager.similarity_search_with_score(
-                knowledge_base_id=knowledge_base_ids[0],
-                query=question,
-                k=top_k,
-            )
-        else:
-            # 多知识库联合检索
-            results = await self.vector_store_manager.multi_knowledge_base_search(
-                knowledge_base_ids=knowledge_base_ids,
-                query=question,
-                k=top_k,
-            )
+        results = await self.retrieval_service.retrieve(
+            knowledge_base_ids=knowledge_base_ids, query=question, top_k=top_k
+        )
 
         # 转换为DocumentChunk对象
         chunks = []
         for doc, score in results:
-            similarity = _distance_to_similarity(score)
+            similarity = score
 
             chunk = DocumentChunk(
                 content=doc.page_content,

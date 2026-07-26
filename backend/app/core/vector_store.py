@@ -157,7 +157,11 @@ class VectorStoreManager:
             persist_directory or settings.vector_db.chroma_persist_directory
         )
         self.api_key = api_key or settings.tongyi.dashscope_api_key
-        self.embedding_model = embedding_model or settings.tongyi.embedding_model
+        self.embedding_model = (
+            embedding_model
+            or os.getenv("EMBEDDING_MODEL")
+            or settings.tongyi.embedding_model
+        )
 
         # 确保持久化目录存在
         self._ensure_directory_exists()

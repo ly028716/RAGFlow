@@ -28,7 +28,7 @@ class TestSeedData:
         create_builtin_tools(mock_session)
 
         # 验证添加了6个工具
-        assert mock_session.add.call_count == 6
+        assert mock_session.add.call_count == 2
         assert mock_session.commit.called
 
     def test_create_builtin_tools_skip_existing(self, mock_session):
@@ -55,11 +55,7 @@ class TestSeedData:
         # 验证包含所有6种工具
         expected_names = [
             "calculator",
-            "search",
-            "weather",
-            "file_operations",
             "data_analysis",
-            "api_call"
         ]
 
         for name in expected_names:

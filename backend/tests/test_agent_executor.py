@@ -7,9 +7,7 @@ from unittest.mock import Mock, patch, AsyncMock
 from app.langchain_integration.agent_executor import AgentManager
 from app.langchain_integration.tools import (
     CalculatorTool,
-    FileOperationsTool,
     DataAnalysisTool,
-    APICallTool
 )
 
 
@@ -28,24 +26,21 @@ class TestAgentManager:
         """测试初始化"""
         assert agent_manager is not None
         assert agent_manager.llm is not None
-        assert len(agent_manager.builtin_tools) == 6
+        assert len(agent_manager.builtin_tools) == 3
 
     def test_load_builtin_tools(self, agent_manager):
         """测试加载内置工具"""
         tools = agent_manager.builtin_tools
 
         # 验证工具数量
-        assert len(tools) == 6
+        assert len(tools) == 3
 
         # 验证工具类型
         tool_names = [tool.name for tool in tools]
         expected_names = [
             "calculator",
-            "search",
-            "weather",
-            "file_operations",
             "data_analysis",
-            "api_call"
+            "knowledge_base_search",
         ]
 
         for name in expected_names:
@@ -55,7 +50,7 @@ class TestAgentManager:
         """测试获取可用工具信息"""
         tools_info = agent_manager.get_available_tools()
 
-        assert len(tools_info) == 6
+        assert len(tools_info) == 3
         assert all("name" in tool for tool in tools_info)
         assert all("description" in tool for tool in tools_info)
         assert all("type" in tool for tool in tools_info)
@@ -65,7 +60,7 @@ class TestAgentManager:
         """测试默认选择所有内置工具"""
         selected = agent_manager._select_tools()
 
-        assert len(selected) == 6
+        assert len(selected) == 3
 
     def test_select_tools_with_custom(self, agent_manager):
         """测试选择工具包含自定义工具"""
@@ -74,7 +69,7 @@ class TestAgentManager:
 
         selected = agent_manager._select_tools(custom_tools=[custom_tool])
 
-        assert len(selected) == 7
+        assert len(selected) == 4
         assert custom_tool in selected
 
     @pytest.mark.asyncio

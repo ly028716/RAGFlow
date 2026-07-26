@@ -6,6 +6,7 @@
 """
 
 import logging
+import os
 import re
 from typing import Any, AsyncGenerator, Dict, Iterator, List, Optional
 
@@ -252,7 +253,7 @@ class TongyiLLM:
             streaming: 是否启用流式输出
         """
         self.api_key = api_key or settings.tongyi.dashscope_api_key
-        self.model_name = model_name or settings.tongyi.tongyi_model_name
+        self.model_name = model_name or os.getenv("LLM_MODEL") or settings.tongyi.tongyi_model_name
         self.temperature = (
             temperature
             if temperature is not None

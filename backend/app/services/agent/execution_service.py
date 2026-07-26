@@ -47,6 +47,7 @@ class TaskExecutionService:
         user_id: int,
         task: str,
         tool_ids: Optional[List[int]] = None,
+        knowledge_base_ids: Optional[List[int]] = None,
         max_iterations: int = 10,
     ) -> Dict[str, Any]:
         """
@@ -107,7 +108,8 @@ class TaskExecutionService:
 
             # 执行任务
             result = await self.agent_manager.execute_task(
-                task=task, tool_ids=tool_ids, max_iterations=max_iterations
+                task=task, tool_ids=tool_ids, knowledge_base_ids=knowledge_base_ids,
+                max_iterations=max_iterations
             )
 
             # 更新执行记录
@@ -197,6 +199,7 @@ class TaskExecutionService:
         user_id: int,
         task: str,
         tool_ids: Optional[List[int]] = None,
+        knowledge_base_ids: Optional[List[int]] = None,
         max_iterations: int = 10,
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
@@ -242,7 +245,8 @@ class TaskExecutionService:
 
             # 流式执行任务
             async for event in self.agent_manager.stream_execute_task(
-                task=task, tool_ids=tool_ids, max_iterations=max_iterations
+                task=task, tool_ids=tool_ids, knowledge_base_ids=knowledge_base_ids,
+                max_iterations=max_iterations
             ):
                 # 如果是步骤事件，更新数据库
                 if event["type"] == "step":
