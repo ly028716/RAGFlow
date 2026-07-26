@@ -121,6 +121,27 @@ class TestAgentManager:
         assert search_tool.allowed_knowledge_base_ids == [1]
 
     @pytest.mark.asyncio
+    async def test_execute_task_keeps_existing_positional_options_compatible(
+        self, agent_manager
+    ):
+        """知识库范围参数不应改变原有 max_iterations 和 verbose 的位置。"""
+        with patch('app.langchain_integration.agent_executor.create_react_agent'):
+            with patch('app.langchain_integration.agent_executor.AgentExecutor') as mock_executor_class:
+                mock_executor = AsyncMock()
+                mock_executor.ainvoke.return_value = {"output": "任务完成"}
+                mock_executor_class.return_value = mock_executor
+
+                result = await agent_manager.execute_task(
+                    "查询知识库", None, None, 5, False, knowledge_base_ids=[1]
+                )
+
+        search_tool = next(
+            tool for tool in agent_manager.builtin_tools if tool.name == "knowledge_base_search"
+        )
+        assert result["status"] == "completed"
+        assert search_tool.allowed_knowledge_base_ids == [1]
+
+    @pytest.mark.asyncio
     async def test_execute_task_failure(self, agent_manager):
         """测试任务执行失败"""
         with patch('app.langchain_integration.agent_executor.create_react_agent'):

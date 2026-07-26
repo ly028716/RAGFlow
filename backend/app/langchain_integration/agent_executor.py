@@ -219,9 +219,9 @@ Thought: {agent_scratchpad}"""
         task: str,
         tool_ids: Optional[List[int]] = None,
         custom_tools: Optional[List[BaseTool]] = None,
-        knowledge_base_ids: Optional[List[int]] = None,
         max_iterations: int = 10,
         verbose: bool = True,
+        knowledge_base_ids: Optional[List[int]] = None,
     ) -> Dict[str, Any]:
         """
         执行Agent任务
