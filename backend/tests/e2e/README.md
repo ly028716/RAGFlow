@@ -8,24 +8,11 @@
 完整的用户工作流测试，覆盖：
 - 用户注册和登录
 - 知识库创建
-- Web Scraper任务创建和执行
 - 知识库查询
 - 对话交互
 - 资源清理
 
-**测试场景**: 10个测试用例，验证端到端的完整流程
-
-### 2. test_web_scraper_e2e.py
-Web Scraper功能的专项E2E测试，覆盖：
-- 任务CRUD操作（创建、读取、更新、删除）
-- 一次性任务和定时任务创建
-- 任务启动和停止
-- 任务日志查询和筛选
-- 任务列表筛选（按状态、调度类型）
-- 分页功能
-- 批量任务创建
-
-**测试场景**: 14个测试用例，专注于Web Scraper功能
+**测试场景**: 6个测试用例，验证端到端的完整流程
 
 ## 前置条件
 
@@ -83,11 +70,6 @@ docker-compose exec backend alembic upgrade head
 # 运行所有E2E测试
 pytest tests/e2e/ -v
 
-# 运行特定测试文件
-pytest tests/e2e/test_web_scraper_e2e.py -v
-
-# 运行特定测试用例
-pytest tests/e2e/test_web_scraper_e2e.py::TestWebScraperE2E::test_01_create_once_task -v
 ```
 
 5. **停止服务**
@@ -119,23 +101,6 @@ pytest tests/e2e/ -v
 ```
 
 ## 测试配置
-
-### 修改测试基础URL
-如果后端服务运行在不同的地址，可以修改测试文件中的 `BASE_URL`：
-
-```python
-# tests/e2e/test_web_scraper_e2e.py
-class TestWebScraperE2E:
-    BASE_URL = "http://localhost:8000/api/v1"  # 修改为实际地址
-```
-
-### 测试超时设置
-某些测试可能需要等待任务执行完成，可以调整等待时间：
-
-```python
-# 在测试中调整等待时间
-time.sleep(5)  # 等待5秒
-```
 
 ## 测试报告
 

@@ -18,8 +18,6 @@ from app.models.system_prompt import SystemPrompt
 from app.models.user import User
 from app.models.user_quota import UserQuota
 from app.models.verification_code import VerificationCode
-from app.models.web_scraper_task import WebScraperTask, ScheduleType, TaskStatus as ScraperTaskStatus
-from app.models.web_scraper_log import WebScraperLog, LogStatus
 
 # 导出所有模型
 __all__ = [
@@ -41,9 +39,4 @@ __all__ = [
     "SystemPrompt",
     "KnowledgeBasePermission",
     "PermissionType",
-    "WebScraperTask",
-    "ScheduleType",
-    "ScraperTaskStatus",
-    "WebScraperLog",
-    "LogStatus",
 ]
