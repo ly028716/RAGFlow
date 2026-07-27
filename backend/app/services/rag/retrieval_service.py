@@ -60,11 +60,21 @@ class RetrievalService:
 
         selected = []
         seen = set()
+        allowed_knowledge_base_ids = set(knowledge_base_ids)
         for document, distance in raw:
+            metadata = document.metadata or {}
+            result_knowledge_base_id = metadata.get("knowledge_base_id")
+            if result_knowledge_base_id is not None:
+                try:
+                    if int(result_knowledge_base_id) not in allowed_knowledge_base_ids:
+                        continue
+                except (TypeError, ValueError):
+                    # Malformed scope metadata must not bypass the requested
+                    # knowledge-base boundary.
+                    continue
             similarity = distance_to_similarity(distance)
             if similarity < self.similarity_threshold:
                 continue
-            metadata = document.metadata or {}
             key = (
                 metadata.get("document_id"),
                 metadata.get("chunk_index"),

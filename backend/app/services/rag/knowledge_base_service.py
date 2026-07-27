@@ -5,10 +5,12 @@
 """
 
 import logging
+import os
 from typing import List, Optional, Tuple
 
 from sqlalchemy.orm import Session
 
+from app.core.vector_store import get_vector_store_manager
 from app.models.knowledge_base import KnowledgeBase
 from app.models.knowledge_base_permission import PermissionType
 from app.repositories.knowledge_base_repository import KnowledgeBaseRepository
@@ -213,10 +215,29 @@ class KnowledgeBaseService(BaseRAGService):
         Raises:
             KnowledgeBaseNotFoundError: 知识库不存在
         """
-        # 检查知识库是否存在
+        # Check ownership before touching either filesystem or vector state.
         kb = self.kb_repo.get_by_id_and_user(kb_id, user_id)
         if not kb:
             raise KnowledgeBaseNotFoundError(f"知识库不存在: id={kb_id}")
+
+        # Vector collections cannot participate in the relational transaction.
+        # Keep cleanup best-effort so a transient Chroma outage does not make a
+        # knowledge base (and its files) impossible for its owner to delete.
+        try:
+            deleted = get_vector_store_manager().delete_collection(kb_id)
+            if not deleted:
+                logger.warning("删除知识库向量集合失败: id=%s", kb_id)
+        except Exception as exc:
+            logger.warning("删除知识库向量集合异常: id=%s, error=%s", kb_id, exc)
+
+        # Preserve file cleanup while keeping all deletion side effects in the
+        # service layer that already validated ownership.
+        for document in kb.documents:
+            try:
+                if os.path.exists(document.file_path):
+                    os.remove(document.file_path)
+            except Exception as exc:
+                logger.warning("删除文档文件失败: %s, error=%s", document.file_path, exc)
 
         # 删除数据库记录
         success = self.kb_repo.delete(kb_id, user_id)

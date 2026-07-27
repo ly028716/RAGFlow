@@ -214,6 +214,7 @@ async def rag_query_stream(
                         "error": "RAG查询失败",
                     }
                     yield f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
+                    return
 
             logger.info(
                 f"用户 {current_user.id} RAG流式查询完成: "

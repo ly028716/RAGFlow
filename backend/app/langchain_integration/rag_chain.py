@@ -24,7 +24,7 @@ from langchain.prompts import PromptTemplate
 from langchain_core.documents import Document
 
 from app.config import settings
-from app.core.llm import TongyiLLM, get_llm, get_streaming_llm
+from app.core.llm import TongyiLLM, get_llm, get_streaming_llm, invoke_llm
 from app.core.vector_store import VectorStoreManager, get_vector_store_manager
 from app.services.rag.retrieval_service import RetrievalService, distance_to_similarity
 
@@ -257,7 +257,7 @@ class RAGManager:
             answer = "当前知识库中未找到足够相关的信息，无法基于知识库回答该问题。"
         else:
             llm = self._get_llm(streaming=False)
-            answer = await llm.llm.ainvoke(prompt)
+            answer = await invoke_llm(prompt, llm=llm)
         generation_time_ms = round((time.perf_counter() - generation_started) * 1000, 2)
 
         # 步骤5: 估算token数量

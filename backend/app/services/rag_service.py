@@ -151,31 +151,8 @@ class RAGService:
 
         删除知识库及其所有文档和向量数据。
         """
-        import os
-        from app.config import settings
-        from app.core.vector_store import get_vector_store_manager
-
-        # 获取知识库以删除其文档
-        kb = self._kb_service.get_raw(kb_id)
-        if not kb:
-            raise KnowledgeBaseNotFoundError(f"知识库不存在: id={kb_id}")
-
-        # 删除向量数据
-        try:
-            vector_store_manager = get_vector_store_manager()
-            vector_store_manager.delete_collection(kb_id)
-        except Exception as e:
-            logger.warning(f"删除向量集合失败: {str(e)}")
-
-        # 删除文档文件
-        for doc in kb.documents:
-            try:
-                if os.path.exists(doc.file_path):
-                    os.remove(doc.file_path)
-            except Exception as e:
-                logger.warning(f"删除文件失败: {doc.file_path}, error={str(e)}")
-
-        # 删除数据库记录
+        # The specialized service owns authorization and every destructive
+        # side effect, preventing the facade from bypassing those checks.
         return self._kb_service.delete(kb_id, user_id)
 
     # ==================== 文档管理 (委托给 DocumentService) ====================
