@@ -4,13 +4,25 @@
 
 本报告评估受限本地知识库 RAG Agent 的检索质量、答案忠实度与端到端延迟。数据集为 [rag-evaluation-dataset.jsonl](./rag-evaluation-dataset.jsonl)，共 **24** 个固定问题；每行均包含 `id`、`knowledge_base`、`question`、`expected_document_ids` 和 `expected_answer_points`。
 
-运行评测前，将同名的演示文档导入 `rag-agent-demo`，并将数据集内的逻辑文档 ID 映射到该环境的真实 `document_id`。该映射和模型版本应与结果一并归档，避免把不同语料、模型或索引参数的结果直接比较。
+版本化演示语料和稳定逻辑 ID 位于 [evaluation-corpus/rag-agent-demo](./evaluation-corpus/rag-agent-demo)。数据集中的 `expected_document_ids` 是逻辑文件名，不是数据库自增 ID；`manifest.json` 将每个逻辑 ID 映射到稳定的 `expected_source_identifier`。运行导入脚本后，会生成该次环境的 `runtime-document-map.local.json`，其中保存逻辑 ID 到真实 `Document.id` 的映射。该映射和模型版本必须与结果一并归档，避免把不同语料、模型或索引参数的结果直接比较。
+
+### 导入固定语料
+
+1. 使用界面或 `POST /api/v1/knowledge-bases` 创建名为 `rag-agent-demo` 的知识库，并记录其数字 ID。
+2. 登录获得访问令牌，将令牌放入 `RAG_EVAL_ACCESS_TOKEN`。
+3. 在仓库根目录运行以下命令；脚本按 `manifest.json` 上传全部 16 个 Markdown 文档，并写出本次评测的真实 ID 映射。
+
+```bash
+python backend/scripts/import_rag_evaluation_corpus.py --knowledge-base-id <知识库ID>
+```
+
+4. 等待所有文档状态为 `completed`，再用生成的 `runtime-document-map.local.json` 将每题逻辑期望 ID 转换为实际 `document_id` 评分。
 
 ## 采集过程
 
 1. 固定 `LLM_PROVIDER=dashscope`、`LLM_MODEL=qwen-plus`、`EMBEDDING_PROVIDER=dashscope`、`EMBEDDING_MODEL=text-embedding-v3`。
-2. 固定分块、Top-K、阈值和提示词；记录 Git commit、数据导入时间和 DashScope 模型版本。
-3. 每题保存检索到的文档 ID、原始与最终上下文、流式事件、最终答案和引用校验结果。
+2. 固定分块、Top-K、阈值和提示词；记录 Git commit、语料版本、运行时 ID 映射和 DashScope 模型版本。
+3. 每题保存检索到的真实文档 ID、原始与最终上下文、流式事件、最终答案和引用校验结果。
 4. 由两位评审独立标注 Faithfulness 与 Answer Relevancy；存在分歧时复核并记录结论。
 
 ## 指标定义

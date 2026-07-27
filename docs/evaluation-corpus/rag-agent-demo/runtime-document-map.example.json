@@ -1,0 +1,13 @@
+{
+  "corpus_id": "rag-agent-demo-v1",
+  "knowledge_base_id": 42,
+  "documents": [
+    {
+      "logical_document_id": "architecture-overview.md",
+      "expected_source_identifier": "rag-agent-demo-v1/architecture-overview.md",
+      "runtime_document_id": 101,
+      "runtime_filename": "architecture-overview.md"
+    }
+  ],
+  "note": "This example is illustrative. Generate runtime-document-map.local.json after each import and use its numeric runtime_document_id values for Recall@K and Hit Rate."
+}

@@ -1,0 +1,27 @@
+{
+  "corpus_id": "rag-agent-demo-v1",
+  "knowledge_base_name": "rag-agent-demo",
+  "identifier_contract": {
+    "logical_document_id": "The stable filename used by rag-evaluation-dataset.jsonl.",
+    "expected_source_identifier": "The stable source identifier used for scoring before a database is created.",
+    "runtime_document_id": "The numeric Document.id returned by the upload API; import_rag_evaluation_corpus.py writes its mapping for each run."
+  },
+  "documents": [
+    {"logical_document_id": "architecture-overview.md", "corpus_path": "architecture-overview.md", "expected_source_identifier": "rag-agent-demo-v1/architecture-overview.md"},
+    {"logical_document_id": "agent-workflow.md", "corpus_path": "agent-workflow.md", "expected_source_identifier": "rag-agent-demo-v1/agent-workflow.md"},
+    {"logical_document_id": "retrieval-design.md", "corpus_path": "retrieval-design.md", "expected_source_identifier": "rag-agent-demo-v1/retrieval-design.md"},
+    {"logical_document_id": "authorization-model.md", "corpus_path": "authorization-model.md", "expected_source_identifier": "rag-agent-demo-v1/authorization-model.md"},
+    {"logical_document_id": "context-budget.md", "corpus_path": "context-budget.md", "expected_source_identifier": "rag-agent-demo-v1/context-budget.md"},
+    {"logical_document_id": "citation-policy.md", "corpus_path": "citation-policy.md", "expected_source_identifier": "rag-agent-demo-v1/citation-policy.md"},
+    {"logical_document_id": "api-contract.md", "corpus_path": "api-contract.md", "expected_source_identifier": "rag-agent-demo-v1/api-contract.md"},
+    {"logical_document_id": "observability.md", "corpus_path": "observability.md", "expected_source_identifier": "rag-agent-demo-v1/observability.md"},
+    {"logical_document_id": "knowledge-base-lifecycle.md", "corpus_path": "knowledge-base-lifecycle.md", "expected_source_identifier": "rag-agent-demo-v1/knowledge-base-lifecycle.md"},
+    {"logical_document_id": "deployment-config.md", "corpus_path": "deployment-config.md", "expected_source_identifier": "rag-agent-demo-v1/deployment-config.md"},
+    {"logical_document_id": "security-boundaries.md", "corpus_path": "security-boundaries.md", "expected_source_identifier": "rag-agent-demo-v1/security-boundaries.md"},
+    {"logical_document_id": "resilience.md", "corpus_path": "resilience.md", "expected_source_identifier": "rag-agent-demo-v1/resilience.md"},
+    {"logical_document_id": "agent-debug-ui.md", "corpus_path": "agent-debug-ui.md", "expected_source_identifier": "rag-agent-demo-v1/agent-debug-ui.md"},
+    {"logical_document_id": "evaluation-guide.md", "corpus_path": "evaluation-guide.md", "expected_source_identifier": "rag-agent-demo-v1/evaluation-guide.md"},
+    {"logical_document_id": "interview-demo.md", "corpus_path": "interview-demo.md", "expected_source_identifier": "rag-agent-demo-v1/interview-demo.md"},
+    {"logical_document_id": "migration-history.md", "corpus_path": "migration-history.md", "expected_source_identifier": "rag-agent-demo-v1/migration-history.md"}
+  ]
+}

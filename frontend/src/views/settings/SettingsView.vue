@@ -21,13 +21,13 @@ const deletionStatus = ref<DeletionStatusResponse | null>(null)
 
 // Mock Configs for new tabs
 const modelConfig = reactive({
-  defaultModel: 'qwen-turbo',
+  defaultModel: 'qwen-plus',
   apiKey: ''
 })
 
 const vectorConfig = reactive({
   prefix: 'kiro_kb_',
-  embeddingModel: 'text-embedding-v1'
+  embeddingModel: 'text-embedding-v3'
 })
 
 const cacheConfig = reactive({
@@ -274,9 +274,7 @@ onMounted(() => {
               <el-form label-position="top">
                 <el-form-item label="默认模型">
                   <el-select v-model="modelConfig.defaultModel">
-                    <el-option label="qwen-turbo" value="qwen-turbo" />
                     <el-option label="qwen-plus" value="qwen-plus" />
-                    <el-option label="qwen-max" value="qwen-max" />
                   </el-select>
                 </el-form-item>
                 <el-form-item label="API Key">
@@ -306,7 +304,7 @@ onMounted(() => {
                 </el-form-item>
                 <el-form-item label="Embedding Model">
                   <el-select v-model="vectorConfig.embeddingModel">
-                    <el-option label="text-embedding-v1" value="text-embedding-v1" />
+                    <el-option label="text-embedding-v3" value="text-embedding-v3" />
                   </el-select>
                 </el-form-item>
               </el-form>

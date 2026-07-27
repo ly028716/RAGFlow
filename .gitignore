@@ -87,3 +87,6 @@ Thumbs.db
 # Claude Code
 .claude/settings.local.json
 .worktrees/
+
+# Environment-specific RAG evaluation import result
+docs/evaluation-corpus/**/runtime-document-map.local.json

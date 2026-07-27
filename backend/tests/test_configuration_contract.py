@@ -1,5 +1,6 @@
-"""Contract tests for the constrained DashScope-only model configuration."""
+"""Contracts for the constrained DashScope configuration and evaluation kit."""
 
+import json
 from pathlib import Path
 
 import pytest
@@ -9,6 +10,7 @@ from app.config import TongyiSettings
 
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
+REPOSITORY_ROOT = BACKEND_ROOT.parent
 
 
 def _read_env_template() -> dict[str, str]:
@@ -54,3 +56,46 @@ def test_tongyi_settings_rejects_non_dashscope_provider(monkeypatch) -> None:
 
     with pytest.raises(ValidationError, match="dashscope"):
         TongyiSettings(_env_file=None)
+
+
+def test_evaluation_dataset_references_the_versioned_demo_corpus() -> None:
+    """Every expected document ID resolves to a checked-in corpus source and mapping."""
+    corpus_root = REPOSITORY_ROOT / "docs" / "evaluation-corpus" / "rag-agent-demo"
+    manifest = json.loads((corpus_root / "manifest.json").read_text(encoding="utf-8"))
+    dataset = [
+        json.loads(line)
+        for line in (REPOSITORY_ROOT / "docs" / "rag-evaluation-dataset.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if line.strip()
+    ]
+    documents = {item["logical_document_id"]: item for item in manifest["documents"]}
+
+    assert manifest["corpus_id"] == "rag-agent-demo-v1"
+    assert len(dataset) == 24
+    for record in dataset:
+        for document_id in record["expected_document_ids"]:
+            document = documents[document_id]
+            assert (corpus_root / document["corpus_path"]).is_file()
+            assert document["expected_source_identifier"] == (
+                f"rag-agent-demo-v1/{document_id}"
+            )
+
+
+def test_frontend_and_openapi_examples_use_the_dashscope_model_contract() -> None:
+    """User-facing defaults and generated OpenAPI examples match backend defaults."""
+    from app.schemas.system import SystemConfigResponse
+
+    settings_source = (
+        REPOSITORY_ROOT / "frontend" / "src" / "views" / "settings" / "SettingsView.vue"
+    ).read_text(encoding="utf-8")
+    schema_example = SystemConfigResponse.model_config["json_schema_extra"]["example"]
+
+    assert "qwen-plus" in settings_source
+    assert "text-embedding-v3" in settings_source
+    assert "qwen-turbo" not in settings_source
+    assert "text-embedding-v1" not in settings_source
+    assert schema_example["tongyi"]["llm_provider"] == "dashscope"
+    assert schema_example["tongyi"]["model_name"] == "qwen-plus"
+    assert schema_example["tongyi"]["embedding_provider"] == "dashscope"
+    assert schema_example["tongyi"]["embedding_model"] == "text-embedding-v3"

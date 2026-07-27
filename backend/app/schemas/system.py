@@ -51,9 +51,12 @@ class SystemConfigResponse(BaseModel):
                 },
                 "tongyi": {
                     "api_key": "sk-a****",
-                    "model_name": "qwen-turbo",
+                    "llm_provider": "dashscope",
+                    "model_name": "qwen-plus",
                     "temperature": 0.7,
                     "max_tokens": 2000,
+                    "embedding_provider": "dashscope",
+                    "embedding_model": "text-embedding-v3",
                 },
             }
         }
