@@ -50,10 +50,11 @@ class KnowledgeBaseSearchTool(BaseTool):
                     "document_id": metadata.get("document_id"),
                     "chunk_index": metadata.get("chunk_index"),
                     "content": document.page_content,
-                    "similarity": similarity,
-                    "source": metadata.get("source")
+                    "document_name": metadata.get("source")
                     or metadata.get("file_path")
-                    or metadata.get("document_name"),
+                    or metadata.get("document_name")
+                    or "Unknown",
+                    "similarity_score": similarity,
                 }
             )
         return json.dumps(

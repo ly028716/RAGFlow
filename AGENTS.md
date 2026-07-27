@@ -206,15 +206,14 @@ Configuration:
 
 #### 7. Agent System (app/langchain_integration/agent_executor.py)
 
-Uses ReAct (Reasoning + Acting) pattern with built-in tools:
-- `calculator_tool.py`: Math calculations
-- `search_tool.py`: Web search
-- `weather_tool.py`: Weather queries
-- `api_call_tool.py`: HTTP API calls (whitelist required)
-- `data_analysis_tool.py`: Data analysis
-- `file_operations_tool.py`: File operations
+Uses a constrained four-stage local RAG workflow with fixed tools:
+- `query_rewriter_tool.py`: rewrite the user's question for retrieval
+- `knowledge_base_search_tool.py`: search only authorized local Chroma collections
+- `context_selector_tool.py`: fit retrieved evidence into the context budget
+- `citation_validator_tool.py`: validate citations against selected chunks
 
-Agent execution is tracked in database for audit and debugging.
+Do not add external search, arbitrary HTTP, file-operation, calculator, or custom-tool
+execution to this Agent. Execution is tracked in the database for audit and debugging.
 
 ### Frontend: Composition API + Pinia
 

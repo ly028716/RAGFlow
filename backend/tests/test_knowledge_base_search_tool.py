@@ -31,7 +31,7 @@ class FakeRetrievalService:
 
 
 @pytest.mark.asyncio
-async def test_knowledge_base_search_returns_citation_ready_results(monkeypatch):
+async def test_knowledge_base_search_returns_agent_ui_document_chunk_contract(monkeypatch):
     monkeypatch.setattr(
         "app.langchain_integration.tools.knowledge_base_search_tool.get_vector_store_manager",
         lambda: object(),
@@ -52,8 +52,8 @@ async def test_knowledge_base_search_returns_citation_ready_results(monkeypatch)
         "document_id": 42,
         "chunk_index": 3,
         "content": "部署步骤...",
-        "similarity": 0.91,
-        "source": "runbook.md",
+        "document_name": "runbook.md",
+        "similarity_score": 0.91,
     }
 
 

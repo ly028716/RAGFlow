@@ -78,7 +78,9 @@ class TestAgentManager:
         }
 
     @pytest.mark.asyncio
-    async def test_execute_task_records_structured_four_stage_trace(self, agent_manager):
+    async def test_execute_task_preserves_agent_ui_document_chunk_contract(
+        self, agent_manager
+    ):
         tools = [
             FakeWorkflowTool(
                 "query_rewriter",
@@ -91,10 +93,12 @@ class TestAgentManager:
                     "count": 1,
                     "results": [
                         {
+                            "knowledge_base_id": 1,
                             "document_id": 7,
                             "chunk_index": 0,
                             "content": "chunk",
-                            "similarity": 0.9,
+                            "document_name": "runbook.md",
+                            "similarity_score": 0.9,
                         }
                     ],
                     "retrieval_time_ms": 4.0,
@@ -105,10 +109,12 @@ class TestAgentManager:
                 {
                     "selected_chunks": [
                         {
+                            "knowledge_base_id": 1,
                             "document_id": 7,
                             "chunk_index": 0,
                             "content": "chunk",
-                            "similarity": 0.9,
+                            "document_name": "runbook.md",
+                            "similarity_score": 0.9,
                         }
                     ]
                 },
@@ -136,7 +142,16 @@ class TestAgentManager:
             "citation_validator",
         ]
         assert result["steps"][0]["data"]["original_question"] == "question"
-        assert result["steps"][1]["data"]["raw_chunks"][0]["document_id"] == 7
+        assert result["steps"][1]["data"]["raw_chunks"] == [
+            {
+                "knowledge_base_id": 1,
+                "document_id": 7,
+                "chunk_index": 0,
+                "content": "chunk",
+                "document_name": "runbook.md",
+                "similarity_score": 0.9,
+            }
+        ]
         assert result["steps"][2]["data"]["final_context"]
         assert result["steps"][3]["data"]["citation_validation"]["valid"] is True
         assert result["steps"][3]["data"]["tokens_used"] == 28
@@ -208,10 +223,12 @@ class TestAgentManager:
                 {
                     "results": [
                         {
+                            "knowledge_base_id": 1,
                             "document_id": 7,
                             "chunk_index": 0,
                             "content": "chunk",
-                            "similarity": 0.9,
+                            "document_name": "runbook.md",
+                            "similarity_score": 0.9,
                         }
                     ],
                     "retrieval_time_ms": 4.0,
@@ -222,10 +239,12 @@ class TestAgentManager:
                 {
                     "selected_chunks": [
                         {
+                            "knowledge_base_id": 1,
                             "document_id": 7,
                             "chunk_index": 0,
                             "content": "chunk",
-                            "similarity": 0.9,
+                            "document_name": "runbook.md",
+                            "similarity_score": 0.9,
                         }
                     ]
                 },
@@ -252,6 +271,16 @@ class TestAgentManager:
             "result",
         ]
         assert events[0]["data"]["action"] == "query_rewriter"
+        assert events[1]["data"]["data"]["raw_chunks"] == [
+            {
+                "knowledge_base_id": 1,
+                "document_id": 7,
+                "chunk_index": 0,
+                "content": "chunk",
+                "document_name": "runbook.md",
+                "similarity_score": 0.9,
+            }
+        ]
         assert events[3]["data"]["content"] == "answer "
         assert events[-1]["data"]["result"] == "answer [citation:7:0]"
 

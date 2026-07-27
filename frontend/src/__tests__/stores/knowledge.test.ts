@@ -225,7 +225,7 @@ describe('Knowledge Store', () => {
     it('切换知识库时应忽略旧请求返回，展示最后一次请求结果', async () => {
       const store = useKnowledgeStore()
 
-      let resolveKb2: ((val: PaginatedList<Document>) => void) | null = null
+      let resolveKb2!: (val: PaginatedList<Document>) => void
       const kb2Promise = new Promise<PaginatedList<Document>>(resolve => {
         resolveKb2 = resolve
       })
@@ -241,7 +241,7 @@ describe('Knowledge Store', () => {
       const p2 = store.fetchDocuments(2)
       const p1 = store.fetchDocuments(1)
 
-      resolveKb2?.({
+      resolveKb2({
         items: [createMockDocument({ id: 202, knowledge_base_id: 2, filename: 'doc2.txt' })],
         total: 1
       })

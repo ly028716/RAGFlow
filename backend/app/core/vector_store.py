@@ -515,8 +515,21 @@ class VectorStoreManager:
 
             return True
         except Exception as e:
+            # Chroma raises a collection-specific not-found error when a
+            # knowledge base never received vectors (or was already cleaned
+            # up).  That end state satisfies deletion.  Do not swallow other
+            # backend failures: callers deliberately fail closed for those.
+            if self._is_missing_collection_error(e):
+                logger.info("向量集合已不存在，无需重复删除: %s", collection_name)
+                return True
             logger.error(f"删除向量集合失败: {str(e)}")
             return False
+
+    @staticmethod
+    def _is_missing_collection_error(error: Exception) -> bool:
+        """Return whether Chroma reported that the requested collection is absent."""
+        message = str(error).lower()
+        return "collection" in message and "does not exist" in message
 
     def get_collection_stats(self, knowledge_base_id: int) -> Dict[str, Any]:
         """
