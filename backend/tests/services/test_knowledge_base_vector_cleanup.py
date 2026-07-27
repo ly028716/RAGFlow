@@ -55,21 +55,34 @@ def test_delete_knowledge_base_removes_its_collection_before_database_record(
     assert db.get(KnowledgeBase, knowledge_base.id) is None
 
 
-def test_delete_knowledge_base_keeps_database_deletion_available_when_vector_cleanup_fails(
-    db, test_user, monkeypatch
+def test_delete_knowledge_base_aborts_before_file_or_database_deletion_when_vector_cleanup_fails(
+    db, test_user, tmp_path, monkeypatch
 ):
-    """An unavailable Chroma instance must not make a KB impossible to delete."""
+    """A failed vector cleanup must retain every relational and file artifact."""
     import app.services.rag.knowledge_base_service as kb_service_module
 
     service = KnowledgeBaseService(db)
     knowledge_base = service.create(test_user.id, "resilient cleanup target")
+    file_path = tmp_path / "retained.md"
+    file_path.write_text("retained", encoding="utf-8")
+    document = Document(
+        knowledge_base_id=knowledge_base.id,
+        filename=file_path.name,
+        file_path=str(file_path),
+        file_size=file_path.stat().st_size,
+        file_type="md",
+    )
+    db.add(document)
+    db.commit()
     failing_cleanup = _FailingVectorCleanup()
     monkeypatch.setattr(
         kb_service_module, "get_vector_store_manager", lambda: failing_cleanup
     )
 
-    assert service.delete(knowledge_base.id, test_user.id) is True
-    assert db.get(KnowledgeBase, knowledge_base.id) is None
+    assert service.delete(knowledge_base.id, test_user.id) is False
+    assert db.get(KnowledgeBase, knowledge_base.id) is not None
+    assert db.get(Document, document.id) is not None
+    assert file_path.exists()
 
 
 @pytest.mark.asyncio

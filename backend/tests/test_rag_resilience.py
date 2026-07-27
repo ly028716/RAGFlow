@@ -33,6 +33,20 @@ class _CrossScopeVectorStore:
                 ),
                 0.2,
             ),
+            (
+                Document(
+                    page_content="missing scope metadata",
+                    metadata={"document_id": 3, "chunk_index": 0},
+                ),
+                0.0,
+            ),
+            (
+                Document(
+                    page_content="string scope metadata",
+                    metadata={"knowledge_base_id": "11", "document_id": 4, "chunk_index": 0},
+                ),
+                0.0,
+            ),
         ]
 
 
@@ -98,3 +112,90 @@ async def test_rag_query_retries_a_transient_dashscope_timeout():
 
     assert response.answer == "Restart it [citation:7:0]"
     assert llm.attempts == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("transient_error", [TimeoutError, ConnectionError])
+async def test_rag_stream_retries_transient_dashscope_failures_before_emitting_error(
+    transient_error,
+):
+    """A first-attempt connection failure must not become a terminal SSE error."""
+    from app.langchain_integration.rag_chain import RAGManager
+
+    class _SingleKbVectorStore:
+        async def similarity_search_with_score(self, knowledge_base_id, query, k):
+            return [
+                (
+                    Document(
+                        page_content="restart the deployment",
+                        metadata={
+                            "knowledge_base_id": 1,
+                            "document_id": 7,
+                            "chunk_index": 0,
+                            "source": "runbook.md",
+                        },
+                    ),
+                    0.1,
+                )
+            ]
+
+    class _RetryingStreamLLM:
+        def __init__(self):
+            self.llm = self
+            self.attempts = 0
+
+        async def astream(self, prompt):
+            self.attempts += 1
+            if self.attempts == 1:
+                raise transient_error("DashScope transient failure")
+            yield "Restart it "
+            yield "[citation:7:0]"
+
+    llm = _RetryingStreamLLM()
+    manager = RAGManager(vector_store_manager=_SingleKbVectorStore(), llm=llm)
+
+    events = [event async for event in manager.stream_query([1], "How do I restart it?", 1)]
+
+    assert [event["type"] for event in events] == ["sources", "token", "token", "done"]
+    assert llm.attempts == 2
+
+
+@pytest.mark.asyncio
+async def test_rag_stream_bounds_retries_before_emitting_terminal_error():
+    """A permanently unavailable DashScope stream must not retry indefinitely."""
+    from app.langchain_integration.rag_chain import RAGManager
+
+    class _SingleKbVectorStore:
+        async def similarity_search_with_score(self, knowledge_base_id, query, k):
+            return [
+                (
+                    Document(
+                        page_content="restart the deployment",
+                        metadata={
+                            "knowledge_base_id": 1,
+                            "document_id": 7,
+                            "chunk_index": 0,
+                            "source": "runbook.md",
+                        },
+                    ),
+                    0.1,
+                )
+            ]
+
+    class _UnavailableStreamLLM:
+        def __init__(self):
+            self.llm = self
+            self.attempts = 0
+
+        async def astream(self, prompt):
+            self.attempts += 1
+            raise TimeoutError("DashScope unavailable")
+            yield "unreachable"
+
+    llm = _UnavailableStreamLLM()
+    manager = RAGManager(vector_store_manager=_SingleKbVectorStore(), llm=llm)
+
+    events = [event async for event in manager.stream_query([1], "How do I restart it?", 1)]
+
+    assert [event["type"] for event in events] == ["sources", "error"]
+    assert llm.attempts == 3

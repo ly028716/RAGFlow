@@ -221,14 +221,16 @@ class KnowledgeBaseService(BaseRAGService):
             raise KnowledgeBaseNotFoundError(f"知识库不存在: id={kb_id}")
 
         # Vector collections cannot participate in the relational transaction.
-        # Keep cleanup best-effort so a transient Chroma outage does not make a
-        # knowledge base (and its files) impossible for its owner to delete.
+        # Fail closed: after a vector-cleanup error the database record and
+        # files remain intact, avoiding a dangling collection with no owner.
         try:
             deleted = get_vector_store_manager().delete_collection(kb_id)
             if not deleted:
                 logger.warning("删除知识库向量集合失败: id=%s", kb_id)
+                return False
         except Exception as exc:
             logger.warning("删除知识库向量集合异常: id=%s, error=%s", kb_id, exc)
+            return False
 
         # Preserve file cleanup while keeping all deletion side effects in the
         # service layer that already validated ownership.

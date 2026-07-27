@@ -7,10 +7,34 @@ from app.services.rag.retrieval_service import RetrievalService
 class FakeVectorStore:
     async def similarity_search_with_score(self, knowledge_base_id, query, k=5):
         return [
-            (Document(page_content="keep", metadata={"document_id": 1, "chunk_index": 0}), 0.1),
-            (Document(page_content="duplicate", metadata={"document_id": 2, "chunk_index": 0}), 0.2),
-            (Document(page_content="duplicate", metadata={"document_id": 2, "chunk_index": 0}), 0.2),
-            (Document(page_content="low", metadata={"document_id": 3, "chunk_index": 0}), 1.8),
+            (
+                Document(
+                    page_content="keep",
+                    metadata={"knowledge_base_id": 1, "document_id": 1, "chunk_index": 0},
+                ),
+                0.1,
+            ),
+            (
+                Document(
+                    page_content="duplicate",
+                    metadata={"knowledge_base_id": 1, "document_id": 2, "chunk_index": 0},
+                ),
+                0.2,
+            ),
+            (
+                Document(
+                    page_content="duplicate",
+                    metadata={"knowledge_base_id": 1, "document_id": 2, "chunk_index": 0},
+                ),
+                0.2,
+            ),
+            (
+                Document(
+                    page_content="low",
+                    metadata={"knowledge_base_id": 1, "document_id": 3, "chunk_index": 0},
+                ),
+                1.8,
+            ),
         ]
 
 

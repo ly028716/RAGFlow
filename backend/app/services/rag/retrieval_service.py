@@ -64,14 +64,14 @@ class RetrievalService:
         for document, distance in raw:
             metadata = document.metadata or {}
             result_knowledge_base_id = metadata.get("knowledge_base_id")
-            if result_knowledge_base_id is not None:
-                try:
-                    if int(result_knowledge_base_id) not in allowed_knowledge_base_ids:
-                        continue
-                except (TypeError, ValueError):
-                    # Malformed scope metadata must not bypass the requested
-                    # knowledge-base boundary.
-                    continue
+            if (
+                isinstance(result_knowledge_base_id, bool)
+                or not isinstance(result_knowledge_base_id, int)
+                or result_knowledge_base_id not in allowed_knowledge_base_ids
+            ):
+                # Scope metadata is mandatory: unscoped or malformed chunks
+                # must never enter a local knowledge-base answer.
+                continue
             similarity = distance_to_similarity(distance)
             if similarity < self.similarity_threshold:
                 continue

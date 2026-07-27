@@ -188,6 +188,35 @@ class RAGManager:
             return get_streaming_llm()
         return get_llm()
 
+    async def _stream_with_retry(
+        self,
+        llm: TongyiLLM,
+        prompt: str,
+        max_attempts: int = 3,
+    ) -> AsyncGenerator[Any, None]:
+        """Retry a transient stream failure only before the first token.
+
+        Retrying after a token has reached the client would replay content and
+        make the answer timeline inconsistent, so partial streams fail
+        terminally instead.
+        """
+        for attempt in range(1, max_attempts + 1):
+            emitted_token = False
+            try:
+                async for chunk in llm.llm.astream(prompt):
+                    emitted_token = True
+                    yield chunk
+                return
+            except (ConnectionError, TimeoutError) as exc:
+                if emitted_token or attempt == max_attempts:
+                    raise
+                logger.warning(
+                    "DashScope 流式生成失败，将重试: attempt=%s/%s, error=%s",
+                    attempt,
+                    max_attempts,
+                    exc,
+                )
+
     async def query(
         self,
         knowledge_base_ids: List[int],
@@ -361,7 +390,7 @@ class RAGManager:
             full_answer = ""
 
             try:
-                async for chunk in llm.llm.astream(prompt):
+                async for chunk in self._stream_with_retry(llm, prompt):
                     if hasattr(chunk, "content"):
                         content = chunk.content
                     else:
