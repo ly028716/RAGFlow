@@ -90,6 +90,12 @@ def test_frontend_and_openapi_examples_use_the_dashscope_model_contract() -> Non
         REPOSITORY_ROOT / "frontend" / "src" / "views" / "settings" / "SettingsView.vue"
     ).read_text(encoding="utf-8")
     schema_example = SystemConfigResponse.model_config["json_schema_extra"]["example"]
+    openapi_snapshot = json.loads(
+        (BACKEND_ROOT / "openapi.json").read_text(encoding="utf-8")
+    )
+    snapshot_example = openapi_snapshot["components"]["schemas"][
+        "SystemConfigResponse"
+    ]["example"]
 
     assert "qwen-plus" in settings_source
     assert "text-embedding-v3" in settings_source
@@ -99,3 +105,7 @@ def test_frontend_and_openapi_examples_use_the_dashscope_model_contract() -> Non
     assert schema_example["tongyi"]["model_name"] == "qwen-plus"
     assert schema_example["tongyi"]["embedding_provider"] == "dashscope"
     assert schema_example["tongyi"]["embedding_model"] == "text-embedding-v3"
+    assert snapshot_example["tongyi"]["llm_provider"] == "dashscope"
+    assert snapshot_example["tongyi"]["model_name"] == "qwen-plus"
+    assert snapshot_example["tongyi"]["embedding_provider"] == "dashscope"
+    assert snapshot_example["tongyi"]["embedding_model"] == "text-embedding-v3"
