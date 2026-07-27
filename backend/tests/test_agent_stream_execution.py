@@ -1,5 +1,7 @@
 """Persistence regression tests for streaming constrained RAG executions."""
 
+import asyncio
+
 import pytest
 
 from app.models.agent_execution import ExecutionStatus
@@ -34,6 +36,22 @@ class FailedStreamManager:
         yield {"type": "error", "data": {"message": "provider timeout", "steps": []}}
 
 
+class HangingStreamManager:
+    async def stream_execute_task(self, *_args, **_kwargs):
+        yield {
+            "type": "step",
+            "data": {
+                "step_number": 1,
+                "thought": "rewrite",
+                "action": "query_rewriter",
+                "action_input": {"question": "q"},
+                "observation": "{}",
+                "timestamp": "2026-07-27T00:00:00",
+            },
+        }
+        await asyncio.Event().wait()
+
+
 @pytest.mark.asyncio
 async def test_stream_execution_persists_completed_result_and_steps(db, test_user):
     service = TaskExecutionService(db)
@@ -62,3 +80,20 @@ async def test_stream_execution_persists_failed_status_without_leaking_error(db,
     assert execution.completed_at is not None
     assert "provider timeout" in execution.error_message
     assert events[-1]["data"]["message"] == "任务执行失败"
+
+
+@pytest.mark.asyncio
+async def test_stream_execution_marks_cancelled_generator_as_failed(db, test_user):
+    service = TaskExecutionService(db)
+    service.agent_manager = HangingStreamManager()
+    stream = service.stream_execute(user_id=test_user.id, task="q")
+
+    created = await anext(stream)
+    await anext(stream)
+    await anext(stream)
+    await stream.aclose()
+
+    execution = AgentExecutionRepository(db).get_by_id(created["data"]["execution_id"])
+    assert execution.status == ExecutionStatus.FAILED
+    assert execution.completed_at is not None
+    assert "cancelled" in execution.error_message.lower()

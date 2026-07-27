@@ -27,3 +27,5 @@ The available system Python also lacks `pymysql`, so importing the project's agg
 - Restored the legacy `execute_task(task, tool_ids, custom_tools, max_iterations, verbose, knowledge_base_ids)` positional contract. Legacy tool ids are ignored and nonempty custom tools are rejected.
 - Replaced the direct Tongyi construction with `get_llm()` and `get_streaming_llm()` factories. The final rendered context now includes citation-tag overhead in its character budget.
 - Added focused regression coverage for the streaming order, terminal persistence, compatibility and LLM factory behavior. Focused pytest remains blocked by the same missing `apscheduler` dependency; revised files pass `py_compile`.
+- Restored the legacy streaming parameter order: `task`, `tool_ids`, `custom_tools`, `max_iterations`, then keyword-safe `knowledge_base_ids`.
+- Added generator-cancellation cleanup: a disconnected/cancelled stream now persists `FAILED`, completion time and a cancellation/disconnect error in a `finally` block without altering normal terminal handling.

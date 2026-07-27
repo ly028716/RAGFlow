@@ -254,3 +254,25 @@ class TestAgentManager:
         assert events[0]["data"]["action"] == "query_rewriter"
         assert events[3]["data"]["content"] == "answer "
         assert events[-1]["data"]["result"] == "answer [citation:7:0]"
+
+    @pytest.mark.asyncio
+    async def test_stream_execute_task_preserves_legacy_positional_placeholders(
+        self, agent_manager
+    ):
+        captured = {}
+
+        def initialize(task, knowledge_base_ids):
+            captured["task"] = task
+            captured["knowledge_base_ids"] = knowledge_base_ids
+            raise RuntimeError("stop after argument capture")
+
+        agent_manager._initialize_workflow = initialize
+        events = [
+            event
+            async for event in agent_manager.stream_execute_task(
+                "question", None, None, 5, [1]
+            )
+        ]
+
+        assert captured == {"task": "question", "knowledge_base_ids": [1]}
+        assert events[-1]["type"] == "error"

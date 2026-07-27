@@ -408,8 +408,8 @@ class AgentManager:
         task: str,
         tool_ids: Optional[List[int]] = None,
         custom_tools: Optional[List[BaseTool]] = None,
-        knowledge_base_ids: Optional[List[int]] = None,
         max_iterations: int = 10,
+        knowledge_base_ids: Optional[List[int]] = None,
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """Emit each completed stage, actual LLM deltas, then validation/result."""
         del tool_ids, max_iterations

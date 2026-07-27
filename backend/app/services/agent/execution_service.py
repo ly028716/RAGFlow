@@ -4,6 +4,7 @@ Agent 任务执行服务模块
 实现 Agent 任务的执行功能（普通执行和流式执行）。
 """
 
+import asyncio
 import logging
 from datetime import datetime
 from typing import Any, AsyncGenerator, Dict, List, Optional
@@ -210,6 +211,8 @@ class TaskExecutionService:
         Yields:
             执行过程中的事件字典
         """
+        execution = None
+        terminal_event_seen = False
         try:
             logger.info(f"用户 {user_id} 开始流式执行Agent任务: {task}")
 
@@ -240,7 +243,6 @@ class TaskExecutionService:
             }
 
             # 流式执行任务
-            terminal_event_seen = False
             async for event in self.agent_manager.stream_execute_task(
                 task=task, knowledge_base_ids=knowledge_base_ids,
                 max_iterations=max_iterations
@@ -312,17 +314,22 @@ class TaskExecutionService:
                     error_message=message,
                     completed_at=datetime.utcnow(),
                 )
+                terminal_event_seen = True
                 yield {
                     "type": "error",
                     "data": {"execution_id": execution.id, "message": "任务执行失败"},
                 }
 
+        except asyncio.CancelledError:
+            logger.info("Agent stream cancelled: execution_id=%s", getattr(execution, "id", None))
+            raise
         except Exception as e:
             logger.error(f"Agent流式任务执行失败: {str(e)}", exc_info=True)
 
             # 如果执行记录已创建，更新为失败状态
-            if "execution" in locals():
+            if execution is not None:
                 self.execution_repo.set_failed(execution.id, error_message=str(e))
+                terminal_event_seen = True
 
             yield {
                 "type": "error",
@@ -331,6 +338,22 @@ class TaskExecutionService:
                     "message": "任务执行失败",
                 },
             }
+        finally:
+            if execution is not None and not terminal_event_seen:
+                try:
+                    self.execution_repo.update(
+                        execution.id,
+                        status=ExecutionStatus.FAILED,
+                        error_message="Agent stream cancelled or disconnected",
+                        completed_at=datetime.utcnow(),
+                    )
+                except Exception as cleanup_error:
+                    logger.error(
+                        "Failed to persist cancelled Agent stream %s: %s",
+                        execution.id,
+                        cleanup_error,
+                        exc_info=True,
+                    )
 
 
 __all__ = [
