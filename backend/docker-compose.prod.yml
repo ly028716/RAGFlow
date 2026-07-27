@@ -87,9 +87,10 @@ services:
       MAX_LOGIN_ATTEMPTS: ${MAX_LOGIN_ATTEMPTS:-5}
       ACCOUNT_LOCKOUT_MINUTES: ${ACCOUNT_LOCKOUT_MINUTES:-15}
 
-      # Tongyi Qianwen API
+      # Online DashScope LLM and Embedding
       DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY}
-      TONGYI_MODEL_NAME: ${TONGYI_MODEL_NAME:-qwen-turbo}
+      LLM_PROVIDER: ${LLM_PROVIDER:-dashscope}
+      LLM_MODEL: ${LLM_MODEL:-qwen-plus}
       TONGYI_TEMPERATURE: ${TONGYI_TEMPERATURE:-0.7}
       TONGYI_MAX_TOKENS: ${TONGYI_MAX_TOKENS:-2000}
 
@@ -98,7 +99,8 @@ services:
       CHROMA_COLLECTION_NAME: ${CHROMA_COLLECTION_NAME:-documents}
 
       # Embeddings
-      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-v1}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-dashscope}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-v3}
 
       # File Upload
       UPLOAD_DIR: /app/uploads

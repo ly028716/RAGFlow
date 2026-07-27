@@ -69,9 +69,11 @@ class ConfigService:
                 "api_key": mask_sensitive_value(
                     settings.tongyi.dashscope_api_key
                 ),
+                "llm_provider": settings.tongyi.llm_provider,
                 "model_name": settings.tongyi.tongyi_model_name,
                 "temperature": settings.tongyi.tongyi_temperature,
                 "max_tokens": settings.tongyi.tongyi_max_tokens,
+                "embedding_provider": settings.tongyi.embedding_provider,
                 "embedding_model": settings.tongyi.embedding_model,
             },
             # 向量数据库配置

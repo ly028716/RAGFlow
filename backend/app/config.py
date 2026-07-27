@@ -99,7 +99,7 @@ class SecuritySettings(BaseSettings):
 
 
 class TongyiSettings(BaseSettings):
-    """通义千问API配置"""
+    """DashScope 在线 LLM 与 Embedding 配置。"""
 
     model_config = SettingsConfigDict(
         env_prefix="",
@@ -114,10 +114,29 @@ class TongyiSettings(BaseSettings):
         validation_alias=AliasChoices("DASHSCOPE_API_KEY", "API_KEY"),
         description="DashScope API密钥",
     )
-    tongyi_model_name: str = Field(default="qwen-turbo", description="模型名称")
+    llm_provider: str = Field(default="dashscope", description="LLM 提供商")
+    tongyi_model_name: str = Field(
+        default="qwen-plus",
+        validation_alias=AliasChoices("LLM_MODEL", "TONGYI_MODEL_NAME"),
+        description="LLM 模型名称",
+    )
     tongyi_temperature: float = Field(default=0.7, ge=0.0, le=2.0, description="温度参数")
     tongyi_max_tokens: int = Field(default=2000, ge=1, le=4000, description="最大token数")
-    embedding_model: str = Field(default="text-embedding-v1", description="嵌入模型名称")
+    embedding_provider: str = Field(default="dashscope", description="Embedding 提供商")
+    embedding_model: str = Field(
+        default="text-embedding-v3",
+        validation_alias=AliasChoices("EMBEDDING_MODEL"),
+        description="嵌入模型名称",
+    )
+
+    @field_validator("llm_provider", "embedding_provider")
+    @classmethod
+    def validate_dashscope_provider(cls, value: str) -> str:
+        """Keep the interview project intentionally constrained to DashScope."""
+        provider = value.strip().lower()
+        if provider != "dashscope":
+            raise ValueError("Only the dashscope provider is supported")
+        return provider
 
     @field_validator("dashscope_api_key")
     @classmethod
