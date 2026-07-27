@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import AgentView from '@/views/agent/AgentView.vue'
 import { useAgentStore } from '@/stores/agent'
+import { useKnowledgeStore } from '@/stores/knowledge'
 
 vi.mock('element-plus', () => ({
   ElMessage: { success: vi.fn(), error: vi.fn() }
@@ -13,6 +14,9 @@ describe('AgentView RAG citation timeline', () => {
 
   it('renders retrieval tool events and source citation metadata', async () => {
     const store = useAgentStore()
+    vi.spyOn(store, 'fetchExecutions').mockResolvedValue(undefined)
+    const knowledgeStore = useKnowledgeStore()
+    vi.spyOn(knowledgeStore, 'fetchKnowledgeBases').mockResolvedValue(undefined)
     store.currentExecution = {
       execution_id: 7,
       task: '系统架构是什么？',
@@ -34,9 +38,13 @@ describe('AgentView RAG citation timeline', () => {
     }
 
     const wrapper = mount(AgentView, { global: { stubs: {
-      'el-button': true, 'el-input': true, 'el-input-number': true, 'el-tag': true,
-      'el-icon': true, 'el-timeline': true, 'el-timeline-item': true, 'el-card': true,
-      'el-table': true, 'el-table-column': true, 'el-empty': true
+      'el-button': true, 'el-input': true, 'el-input-number': true,
+      'el-select': true, 'el-option': true, 'el-alert': true,
+      'el-tag': { template: '<span><slot /></span>' }, 'el-icon': true,
+      'el-timeline': { template: '<div><slot /></div>' },
+      'el-timeline-item': { template: '<div><slot /></div>' },
+      'el-card': { template: '<div><slot /></div>' },
+      'el-table': { template: '<div><slot /></div>' }, 'el-table-column': true, 'el-empty': true
     } } })
     await wrapper.vm.$nextTick()
 

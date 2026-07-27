@@ -166,9 +166,44 @@ export interface ToolUpdate {
 
 export interface TaskExecuteRequest {
   task: string
-  tool_ids?: number[]
   knowledge_base_ids?: number[]
   max_iterations?: number
+}
+
+export interface AgentRetrievalParameters {
+  top_k?: number
+  similarity_threshold?: number
+}
+
+export interface CitationValidation {
+  valid: boolean
+  missing_citation_ids: string[]
+}
+
+export interface AgentStepData {
+  original_question?: string
+  rewritten_query?: string
+  knowledge_base_scope?: number[]
+  retrieval_parameters?: AgentRetrievalParameters
+  raw_chunks?: DocumentChunk[]
+  filtered_chunks?: DocumentChunk[]
+  sources?: DocumentChunk[]
+  final_context?: string
+  context_char_count?: number
+  raw_chunk_count?: number
+  answer?: string
+  citation_validation?: CitationValidation
+  tokens_used?: number
+  retrieval_time_ms?: number
+  generation_time_ms?: number
+  total_time_ms?: number
+}
+
+export interface AgentWorkflowMetrics {
+  retrieval_time_ms?: number
+  generation_time_ms?: number
+  total_time_ms?: number
+  tokens_used?: number
 }
 
 export interface AgentStep {
@@ -179,8 +214,16 @@ export interface AgentStep {
   observation: string | Record<string, any>
   citations?: DocumentChunk[]
   citation_count?: number
+  phase?: 'query_rewrite' | 'retrieval' | 'context_selection' | 'answer_and_citation_validation' | string
+  data?: AgentStepData
   timestamp?: string
 }
+
+export type AgentStreamEvent =
+  | { type: 'step'; data: AgentStep }
+  | { type: 'token'; data: { content: string } }
+  | { type: 'result'; data: { result: string; steps?: AgentStep[]; status?: ExecutionResponse['status']; metrics?: AgentWorkflowMetrics } }
+  | { type: 'error'; data: { message: string; steps?: AgentStep[]; metrics?: AgentWorkflowMetrics } }
 
 export interface ExecutionResponse {
   execution_id: number
@@ -191,6 +234,7 @@ export interface ExecutionResponse {
   error_message?: string
   created_at: string
   completed_at?: string
+  metrics?: AgentWorkflowMetrics
 }
 
 export interface ExecutionListItem {

@@ -1,7 +1,15 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { agentApi } from '@/api/agent'
-import type { AgentTool, ToolCreate, ToolUpdate, ExecutionResponse, ExecutionListItem, AgentStep } from '@/types'
+import type {
+  AgentTool,
+  ToolCreate,
+  ToolUpdate,
+  ExecutionResponse,
+  ExecutionListItem,
+  AgentStep,
+  AgentWorkflowMetrics
+} from '@/types'
 
 export const useAgentStore = defineStore('agent', () => {
   // State
@@ -14,6 +22,8 @@ export const useAgentStore = defineStore('agent', () => {
   const executing = ref(false)
   const streamingSteps = ref<AgentStep[]>([])
   const streamingResult = ref('')
+  const streamingMetrics = ref<AgentWorkflowMetrics>({})
+  const streamingError = ref<string | null>(null)
 
   // Getters
   const enabledTools = computed(() => tools.value.filter(t => t.is_enabled))
@@ -58,13 +68,16 @@ export const useAgentStore = defineStore('agent', () => {
     return updateTool(id, { is_enabled: enabled })
   }
 
-  async function executeTask(task: string, toolIds?: number[], maxIterations?: number, knowledgeBaseIds?: number[]) {
+  async function executeTask(task: string, maxIterations?: number, knowledgeBaseIds?: number[]) {
     executing.value = true
+    currentExecution.value = null
     streamingSteps.value = []
     streamingResult.value = ''
+    streamingMetrics.value = {}
+    streamingError.value = null
     
     try {
-      const result = await agentApi.executeTask({ task, tool_ids: toolIds, knowledge_base_ids: knowledgeBaseIds, max_iterations: maxIterations })
+      const result = await agentApi.executeTask({ task, knowledge_base_ids: knowledgeBaseIds, max_iterations: maxIterations })
       currentExecution.value = result
       return result
     } finally {
@@ -72,24 +85,37 @@ export const useAgentStore = defineStore('agent', () => {
     }
   }
 
-  function streamExecuteTask(task: string, toolIds?: number[], maxIterations?: number, knowledgeBaseIds?: number[]) {
+  function streamExecuteTask(task: string, maxIterations?: number, knowledgeBaseIds?: number[]) {
     executing.value = true
+    currentExecution.value = null
     streamingSteps.value = []
     streamingResult.value = ''
+    streamingMetrics.value = {}
+    streamingError.value = null
     
     const cancel = agentApi.streamExecuteTask(
-      { task, tool_ids: toolIds, knowledge_base_ids: knowledgeBaseIds, max_iterations: maxIterations },
+      { task, knowledge_base_ids: knowledgeBaseIds, max_iterations: maxIterations },
       (event) => {
         if (event.type === 'step') {
-          streamingSteps.value.push(event.data)
+          const index = streamingSteps.value.findIndex(step => step.step_number === event.data.step_number)
+          if (index === -1) streamingSteps.value.push(event.data)
+          else streamingSteps.value[index] = event.data
+        } else if (event.type === 'token') {
+          streamingResult.value += event.data.content
         } else if (event.type === 'result') {
           streamingResult.value = event.data.result
+          if (event.data.steps) streamingSteps.value = event.data.steps
+          streamingMetrics.value = event.data.metrics || {}
         } else if (event.type === 'error') {
+          if (event.data.steps) streamingSteps.value = event.data.steps
+          streamingMetrics.value = event.data.metrics || {}
+          streamingError.value = event.data.message
           executing.value = false
         }
       },
       (error) => {
         executing.value = false
+        streamingError.value = error.message
         console.error('流式执行错误:', error)
       },
       () => {
@@ -124,6 +150,8 @@ export const useAgentStore = defineStore('agent', () => {
     currentExecution.value = null
     streamingSteps.value = []
     streamingResult.value = ''
+    streamingMetrics.value = {}
+    streamingError.value = null
   }
 
   return {
@@ -136,6 +164,8 @@ export const useAgentStore = defineStore('agent', () => {
     executing,
     streamingSteps,
     streamingResult,
+    streamingMetrics,
+    streamingError,
     enabledTools,
     builtinTools,
     customTools,

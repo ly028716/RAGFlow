@@ -6,6 +6,7 @@ import type {
   TaskExecuteRequest,
   ExecutionResponse,
   ExecutionListItem,
+  AgentStreamEvent,
   PaginatedList
 } from '@/types'
 import { storage } from '@/utils/storage'
@@ -41,9 +42,9 @@ export const agentApi = {
 
   // 流式执行任务
   streamExecuteTask(
-    data: TaskExecuteRequest, 
-    onMessage: (event: any) => void, 
-    onError?: (error: any) => void,
+    data: TaskExecuteRequest,
+    onMessage: (event: AgentStreamEvent) => void,
+    onError?: (error: Error) => void,
     onComplete?: () => void
   ): () => void {
     const controller = new AbortController()
@@ -113,7 +114,7 @@ export const agentApi = {
               return
             }
             try {
-              const event = JSON.parse(payload)
+              const event = JSON.parse(payload) as AgentStreamEvent
               onMessage(event)
             } catch {
               continue
