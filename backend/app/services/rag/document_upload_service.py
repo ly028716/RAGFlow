@@ -26,7 +26,6 @@ from app.services.knowledge_base_permission import KnowledgeBasePermissionServic
 from app.services.rag.base import BaseRAGService
 from app.services.rag.exceptions import FileUploadError, KnowledgeBaseNotFoundError
 from app.services.rag.utils import normalize_display_filename, sanitize_filename
-from app.tasks.document_tasks import process_document_task
 
 logger = logging.getLogger(__name__)
 
@@ -280,6 +279,8 @@ class DocumentUploadService(BaseRAGService):
             document_id: 文档ID
         """
         try:
+            from app.tasks.document_tasks import process_document_task
+
             await process_document_task(document_id)
         except Exception as e:
             logger.error(f"后台处理文档失败: document_id={document_id}, error={str(e)}")

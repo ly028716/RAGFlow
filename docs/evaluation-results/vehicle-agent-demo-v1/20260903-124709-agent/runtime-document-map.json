@@ -1,0 +1,96 @@
+{
+  "corpus_id": "vehicle-agent-demo-v1",
+  "knowledge_base_id": 1,
+  "documents": [
+    {
+      "logical_document_id": "cockpit-architecture.md",
+      "expected_source_identifier": "vehicle-agent-demo-v1/cockpit-architecture.md",
+      "runtime_document_id": 1,
+      "runtime_filename": "cockpit-architecture.md"
+    },
+    {
+      "logical_document_id": "android-in-vehicle.md",
+      "expected_source_identifier": "vehicle-agent-demo-v1/android-in-vehicle.md",
+      "runtime_document_id": 2,
+      "runtime_filename": "android-in-vehicle.md"
+    },
+    {
+      "logical_document_id": "vehicle-control-api.md",
+      "expected_source_identifier": "vehicle-agent-demo-v1/vehicle-control-api.md",
+      "runtime_document_id": 3,
+      "runtime_filename": "vehicle-control-api.md"
+    },
+    {
+      "logical_document_id": "hvac-api.md",
+      "expected_source_identifier": "vehicle-agent-demo-v1/hvac-api.md",
+      "runtime_document_id": 4,
+      "runtime_filename": "hvac-api.md"
+    },
+    {
+      "logical_document_id": "media-api.md",
+      "expected_source_identifier": "vehicle-agent-demo-v1/media-api.md",
+      "runtime_document_id": 5,
+      "runtime_filename": "media-api.md"
+    },
+    {
+      "logical_document_id": "navigation-api.md",
+      "expected_source_identifier": "vehicle-agent-demo-v1/navigation-api.md",
+      "runtime_document_id": 6,
+      "runtime_filename": "navigation-api.md"
+    },
+    {
+      "logical_document_id": "binder-communication.md",
+      "expected_source_identifier": "vehicle-agent-demo-v1/binder-communication.md",
+      "runtime_document_id": 7,
+      "runtime_filename": "binder-communication.md"
+    },
+    {
+      "logical_document_id": "vehicle-network-protocols.md",
+      "expected_source_identifier": "vehicle-agent-demo-v1/vehicle-network-protocols.md",
+      "runtime_document_id": 8,
+      "runtime_filename": "vehicle-network-protocols.md"
+    },
+    {
+      "logical_document_id": "android-log-diagnostics.md",
+      "expected_source_identifier": "vehicle-agent-demo-v1/android-log-diagnostics.md",
+      "runtime_document_id": 9,
+      "runtime_filename": "android-log-diagnostics.md"
+    },
+    {
+      "logical_document_id": "error-codes.md",
+      "expected_source_identifier": "vehicle-agent-demo-v1/error-codes.md",
+      "runtime_document_id": 10,
+      "runtime_filename": "error-codes.md"
+    },
+    {
+      "logical_document_id": "v1-v2-differences.md",
+      "expected_source_identifier": "vehicle-agent-demo-v1/v1-v2-differences.md",
+      "runtime_document_id": 11,
+      "runtime_filename": "v1-v2-differences.md"
+    },
+    {
+      "logical_document_id": "security-boundaries.md",
+      "expected_source_identifier": "vehicle-agent-demo-v1/security-boundaries.md",
+      "runtime_document_id": 12,
+      "runtime_filename": "security-boundaries.md"
+    },
+    {
+      "logical_document_id": "retry-and-degradation.md",
+      "expected_source_identifier": "vehicle-agent-demo-v1/retry-and-degradation.md",
+      "runtime_document_id": 13,
+      "runtime_filename": "retry-and-degradation.md"
+    },
+    {
+      "logical_document_id": "citation-policy.md",
+      "expected_source_identifier": "vehicle-agent-demo-v1/citation-policy.md",
+      "runtime_document_id": 14,
+      "runtime_filename": "citation-policy.md"
+    },
+    {
+      "logical_document_id": "evaluation-guide.md",
+      "expected_source_identifier": "vehicle-agent-demo-v1/evaluation-guide.md",
+      "runtime_document_id": 15,
+      "runtime_filename": "evaluation-guide.md"
+    }
+  ]
+}

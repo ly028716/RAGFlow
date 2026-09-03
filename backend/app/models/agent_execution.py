@@ -30,6 +30,10 @@ class ExecutionStatus(str, enum.Enum):
     FAILED = "failed"
 
 
+def _enum_values(enum_cls):
+    return [member.value for member in enum_cls]
+
+
 class AgentExecution(Base):
     """
     Agent执行记录模型
@@ -96,7 +100,7 @@ class AgentExecution(Base):
 
     # 执行状态
     status = Column(
-        Enum(ExecutionStatus),
+        Enum(ExecutionStatus, values_callable=_enum_values, name="executionstatus"),
         default=ExecutionStatus.PENDING,
         nullable=False,
         comment="执行状态",

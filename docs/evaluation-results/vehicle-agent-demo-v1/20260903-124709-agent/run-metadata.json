@@ -1,0 +1,16 @@
+{
+  "run_at_utc": "2026-09-03T04:47:11+00:00",
+  "git_commit": "a21a671a84899c01e7549f156209cbd18982134e",
+  "corpus_id": "vehicle-agent-demo-v1",
+  "mode": "agent",
+  "knowledge_base_id": 1,
+  "llm_model": "qwen-plus",
+  "embedding_model": "text-embedding-v3",
+  "top_k": 5,
+  "similarity_threshold": 0.7,
+  "chunk_size": 1000,
+  "chunk_overlap": 200,
+  "api_base_url": "http://127.0.0.1:8000/api/v1",
+  "dataset_sha256": "cead522f6d65fc9e0ca32420d54c8bfa544190140dac80ca090f17c3330808dc",
+  "manifest_sha256": "bcc3dfbf794f74a5bff24cb6e768102ea4b09cf5467708a7d5928bce1e2ad3d7"
+}

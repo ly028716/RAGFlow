@@ -19,12 +19,12 @@ import httpx
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-CORPUS_ROOT = REPOSITORY_ROOT / "docs" / "evaluation-corpus" / "rag-agent-demo"
+DEFAULT_CORPUS_ROOT = REPOSITORY_ROOT / "docs" / "evaluation-corpus" / "rag-agent-demo"
 
 
-def load_manifest() -> dict[str, Any]:
+def load_manifest(corpus_root: Path = DEFAULT_CORPUS_ROOT) -> dict[str, Any]:
     """Load the checked-in corpus manifest."""
-    return json.loads((CORPUS_ROOT / "manifest.json").read_text(encoding="utf-8"))
+    return json.loads((corpus_root / "manifest.json").read_text(encoding="utf-8"))
 
 
 def upload_document(
@@ -53,16 +53,24 @@ def main() -> int:
         help="Bearer access token (or set RAG_EVAL_ACCESS_TOKEN)",
     )
     parser.add_argument(
+        "--corpus-root",
+        type=Path,
+        default=DEFAULT_CORPUS_ROOT,
+        help="Directory containing manifest.json and its Markdown corpus",
+    )
+    parser.add_argument(
         "--output",
         type=Path,
-        default=CORPUS_ROOT / "runtime-document-map.local.json",
+        default=None,
         help="Path for the environment-specific runtime ID mapping",
     )
     args = parser.parse_args()
     if not args.access_token:
         parser.error("--access-token or RAG_EVAL_ACCESS_TOKEN is required")
 
-    manifest = load_manifest()
+    corpus_root = args.corpus_root.resolve()
+    manifest = load_manifest(corpus_root)
+    output_path = args.output or corpus_root / "runtime-document-map.local.json"
     headers = {"Authorization": f"Bearer {args.access_token}"}
     runtime_documents: list[dict[str, Any]] = []
     with httpx.Client(headers=headers, timeout=60.0) as client:
@@ -71,7 +79,7 @@ def main() -> int:
                 client,
                 args.api_base_url,
                 args.knowledge_base_id,
-                CORPUS_ROOT / item["corpus_path"],
+                corpus_root / item["corpus_path"],
             )
             runtime_documents.append(
                 {
@@ -82,14 +90,14 @@ def main() -> int:
                 }
             )
 
-    output = {
+    output_data = {
         "corpus_id": manifest["corpus_id"],
         "knowledge_base_id": args.knowledge_base_id,
         "documents": runtime_documents,
     }
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(output, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"Uploaded {len(runtime_documents)} documents; runtime mapping: {args.output}")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(output_data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(f"Uploaded {len(runtime_documents)} documents; runtime mapping: {output_path}")
     print("Wait for all document statuses to become completed before running evaluation.")
     return 0
 

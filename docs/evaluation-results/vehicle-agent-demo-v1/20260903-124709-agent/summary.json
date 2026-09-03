@@ -1,0 +1,15 @@
+{
+  "total_cases": 24,
+  "completed_cases": 24,
+  "failed_cases": 0,
+  "answerable_cases": 19,
+  "unanswerable_cases": 5,
+  "recall_at_k": 0.51,
+  "hit_rate": 0.74,
+  "mrr": 0.74,
+  "citation_validity_rate": 1.0,
+  "average_retrieval_time_ms": 2383.35,
+  "average_generation_time_ms": 1470.21,
+  "average_first_token_latency_ms": 3394.63,
+  "refusal_rate": 0.0
+}

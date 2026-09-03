@@ -1,0 +1,22 @@
+{
+  "corpus_id": "vehicle-agent-demo-v1",
+  "knowledge_base_name": "vehicle-agent-demo",
+  "notice": "All documents in this corpus are fictional, self-authored demo material. They do not describe any OEM production system or confidential protocol.",
+  "documents": [
+    {"logical_document_id":"cockpit-architecture.md","corpus_path":"cockpit-architecture.md","expected_source_identifier":"vehicle-agent-demo-v1/cockpit-architecture.md"},
+    {"logical_document_id":"android-in-vehicle.md","corpus_path":"android-in-vehicle.md","expected_source_identifier":"vehicle-agent-demo-v1/android-in-vehicle.md"},
+    {"logical_document_id":"vehicle-control-api.md","corpus_path":"vehicle-control-api.md","expected_source_identifier":"vehicle-agent-demo-v1/vehicle-control-api.md"},
+    {"logical_document_id":"hvac-api.md","corpus_path":"hvac-api.md","expected_source_identifier":"vehicle-agent-demo-v1/hvac-api.md"},
+    {"logical_document_id":"media-api.md","corpus_path":"media-api.md","expected_source_identifier":"vehicle-agent-demo-v1/media-api.md"},
+    {"logical_document_id":"navigation-api.md","corpus_path":"navigation-api.md","expected_source_identifier":"vehicle-agent-demo-v1/navigation-api.md"},
+    {"logical_document_id":"binder-communication.md","corpus_path":"binder-communication.md","expected_source_identifier":"vehicle-agent-demo-v1/binder-communication.md"},
+    {"logical_document_id":"vehicle-network-protocols.md","corpus_path":"vehicle-network-protocols.md","expected_source_identifier":"vehicle-agent-demo-v1/vehicle-network-protocols.md"},
+    {"logical_document_id":"android-log-diagnostics.md","corpus_path":"android-log-diagnostics.md","expected_source_identifier":"vehicle-agent-demo-v1/android-log-diagnostics.md"},
+    {"logical_document_id":"error-codes.md","corpus_path":"error-codes.md","expected_source_identifier":"vehicle-agent-demo-v1/error-codes.md"},
+    {"logical_document_id":"v1-v2-differences.md","corpus_path":"v1-v2-differences.md","expected_source_identifier":"vehicle-agent-demo-v1/v1-v2-differences.md"},
+    {"logical_document_id":"security-boundaries.md","corpus_path":"security-boundaries.md","expected_source_identifier":"vehicle-agent-demo-v1/security-boundaries.md"},
+    {"logical_document_id":"retry-and-degradation.md","corpus_path":"retry-and-degradation.md","expected_source_identifier":"vehicle-agent-demo-v1/retry-and-degradation.md"},
+    {"logical_document_id":"citation-policy.md","corpus_path":"citation-policy.md","expected_source_identifier":"vehicle-agent-demo-v1/citation-policy.md"},
+    {"logical_document_id":"evaluation-guide.md","corpus_path":"evaluation-guide.md","expected_source_identifier":"vehicle-agent-demo-v1/evaluation-guide.md"}
+  ]
+}
