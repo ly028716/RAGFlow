@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 import { ElMessage } from 'element-plus'
 import { CopyDocument, RefreshRight, MagicStick, Document } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
-import MarkdownRenderer from './MarkdownRenderer.vue'
 import type { Message } from '@/types'
+
+const MarkdownRenderer = defineAsyncComponent(() => import('./MarkdownRenderer.vue'))
 
 const props = defineProps<{
   message: Message

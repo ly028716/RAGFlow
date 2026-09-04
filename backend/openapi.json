@@ -3,7 +3,7 @@
   "info": {
     "title": "AI智能助手系统",
     "summary": "AI智能助手系统API",
-    "description": "\n## AI智能助手系统后端API\n\n基于FastAPI和LangChain 1.0框架构建的企业级AI智能助手系统，提供以下核心功能：\n\n### 核心功能\n\n* **智能对话** - 支持多轮对话、流式响应、对话历史管理\n* **RAG知识库** - 文档上传、向量化、智能检索问答\n* **Agent智能代理** - 工具调用、任务执行、推理过程可视化\n* **用户管理** - 注册登录、JWT认证、配额管理\n* **系统监控** - 使用统计、健康检查、Prometheus指标\n\n### 技术栈\n\n* **Web框架**: FastAPI 0.104+\n* **AI框架**: LangChain 1.0\n* **数据库**: MySQL 8.0, Redis 7.0, Chroma\n* **LLM**: 通义千问 (Tongyi Qianwen)\n\n### 认证方式\n\n大部分API端点需要JWT认证。在请求头中添加：\n```\nAuthorization: Bearer <access_token>\n```\n\n### 速率限制\n\n* 登录接口: 5次/分钟\n* 普通API: 100次/分钟\n* LLM调用: 20次/分钟\n\n### 错误响应格式\n\n所有错误响应遵循统一格式：\n```json\n{\n    \"error_code\": \"1001\",\n    \"message\": \"错误描述\",\n    \"request_id\": \"uuid\"\n}\n```\n    ",
+    "description": "\n## AI智能助手系统后端API\n\n基于FastAPI和LangChain 0.1.0框架构建的企业级AI智能助手系统，提供以下核心功能：\n\n### 核心功能\n\n* **智能对话** - 支持多轮对话、流式响应、对话历史管理\n* **RAG知识库** - 文档上传、向量化、智能检索问答\n* **Agent智能代理** - 工具调用、任务执行、推理过程可视化\n* **用户管理** - 注册登录、JWT认证、配额管理\n* **系统监控** - 使用统计、健康检查、Prometheus指标\n\n### 技术栈\n\n* **Web框架**: FastAPI 0.104+\n* **AI框架**: LangChain 0.1.0\n* **数据库**: MySQL 8.0, Redis 7.0, Chroma\n* **LLM**: 通义千问 (Tongyi Qianwen)\n\n### 认证方式\n\n大部分API端点需要JWT认证。在请求头中添加：\n```\nAuthorization: Bearer <access_token>\n```\n\n### 速率限制\n\n* 登录接口: 5次/分钟\n* 普通API: 100次/分钟\n* LLM调用: 20次/分钟\n\n### 错误响应格式\n\n所有错误响应遵循统一格式：\n```json\n{\n    \"error_code\": \"1001\",\n    \"message\": \"错误描述\",\n    \"request_id\": \"uuid\"\n}\n```\n    ",
     "termsOfService": "https://example.com/terms/",
     "contact": {
       "name": "API Support",

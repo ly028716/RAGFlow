@@ -317,7 +317,7 @@ app = FastAPI(
     description="""
 ## AI智能助手系统后端API
 
-基于FastAPI和LangChain 1.0框架构建的企业级AI智能助手系统，提供以下核心功能：
+基于FastAPI和LangChain 0.1.0框架构建的企业级AI智能助手系统，提供以下核心功能：
 
 ### 核心功能
 
@@ -330,7 +330,7 @@ app = FastAPI(
 ### 技术栈
 
 * **Web框架**: FastAPI 0.104+
-* **AI框架**: LangChain 1.0
+* **AI框架**: LangChain 0.1.0
 * **数据库**: MySQL 8.0, Redis 7.0, Chroma
 * **LLM**: 通义千问 (Tongyi Qianwen)
 
