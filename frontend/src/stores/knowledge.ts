@@ -47,12 +47,12 @@ export const useKnowledgeStore = defineStore('knowledge', () => {
   }
 
   // Actions
-  async function fetchKnowledgeBases() {
+  async function fetchKnowledgeBases(keyword = '') {
     loading.value = true
     error.value = null
     try {
       const skip = (kbPagination.value.page - 1) * kbPagination.value.pageSize
-      const res = await knowledgeApi.getList(skip, kbPagination.value.pageSize)
+      const res = await knowledgeApi.getList(skip, kbPagination.value.pageSize, keyword)
       knowledgeBases.value = res.items
       total.value = res.total
     } catch (e: any) {

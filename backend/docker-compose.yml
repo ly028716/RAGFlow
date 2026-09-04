@@ -7,10 +7,10 @@ services:
     container_name: ragflow_mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD must be set}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-ragflow}
       MYSQL_USER: ${MYSQL_USER:-ragflow_user}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-ai_password}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?MYSQL_PASSWORD must be set}
       TZ: Asia/Shanghai
     ports:
       - "${MYSQL_PORT:-3306}:3306"
@@ -92,7 +92,7 @@ services:
       PORT: 8000
       
       # Database Configuration
-      DATABASE_URL: mysql+pymysql://${MYSQL_USER:-ragflow_user}:${MYSQL_PASSWORD:-ragflow_password}@mysql:3306/${MYSQL_DATABASE:-ragflow}
+      DATABASE_URL: mysql+pymysql://${MYSQL_USER:-ragflow_user}:${MYSQL_PASSWORD:?MYSQL_PASSWORD must be set}@mysql:3306/${MYSQL_DATABASE:-ragflow}
       DB_POOL_SIZE: ${DB_POOL_SIZE:-10}
       DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-20}
       DB_POOL_RECYCLE: ${DB_POOL_RECYCLE:-3600}
@@ -104,7 +104,7 @@ services:
       REDIS_DB: ${REDIS_DB:-0}
       
       # JWT Configuration
-      SECRET_KEY: ${SECRET_KEY:-change-this-secret-key-in-production}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be set}
       ALGORITHM: ${ALGORITHM:-HS256}
       ACCESS_TOKEN_EXPIRE_DAYS: ${ACCESS_TOKEN_EXPIRE_DAYS:-7}
       REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-30}
@@ -117,7 +117,7 @@ services:
       ACCOUNT_LOCKOUT_MINUTES: ${ACCOUNT_LOCKOUT_MINUTES:-15}
       
       # Online DashScope LLM and Embedding
-      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY}
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:?DASHSCOPE_API_KEY must be set}
       LLM_PROVIDER: ${LLM_PROVIDER:-dashscope}
       LLM_MODEL: ${LLM_MODEL:-qwen-plus}
       TONGYI_TEMPERATURE: ${TONGYI_TEMPERATURE:-0.7}

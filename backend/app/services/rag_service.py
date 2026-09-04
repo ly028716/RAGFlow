@@ -104,9 +104,10 @@ class RAGService:
         user_id: int,
         skip: int = 0,
         limit: int = 20,
+        keyword: Optional[str] = None,
     ) -> Tuple[List[KnowledgeBase], int]:
         """获取用户的知识库列表"""
-        return self._kb_service.get_list(user_id, skip, limit)
+        return self._kb_service.get_list(user_id, skip, limit, keyword)
 
     def get_knowledge_base(
         self,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, Delete, Edit, Document, Upload, FolderOpened, Share, View, Download, RefreshRight } from '@element-plus/icons-vue'
 import { useKnowledgeStore } from '@/stores/knowledge'
@@ -28,10 +28,17 @@ const previewContent = ref('')
 const previewTitle = ref('')
 const previewLoading = ref(false)
 
-// 计算属性 - 移除前端过滤，搜索应由后端处理（TODO: 后端搜索API接入）
-const filteredKnowledgeBases = computed(() => {
-  return knowledgeStore.knowledgeBases
-})
+let searchTimer: ReturnType<typeof setTimeout> | undefined
+
+function fetchKnowledgeBasesByKeyword() {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    knowledgeStore.kbPagination.page = 1
+    knowledgeStore.fetchKnowledgeBases(searchQuery.value.trim())
+  }, 300)
+}
+
+watch(searchQuery, fetchKnowledgeBasesByKeyword)
 
 // 方法
 async function handleCreate() {
@@ -253,9 +260,9 @@ onMounted(() => {
     <!-- 知识库列表 -->
     <div class="kb-container" v-loading="knowledgeStore.loading">
       <div class="kb-list">
-        <template v-if="filteredKnowledgeBases.length > 0">
+        <template v-if="knowledgeStore.knowledgeBases.length > 0">
           <div 
-            v-for="kb in filteredKnowledgeBases" 
+            v-for="kb in knowledgeStore.knowledgeBases"
             :key="kb.id" 
             class="kb-card"
             @click="handleViewDetail(kb)"

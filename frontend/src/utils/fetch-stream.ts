@@ -19,7 +19,11 @@ export async function fetchStream(url: string, options: FetchStreamOptions = {})
   // 设置默认超时时间（30秒）
   const timeout = options.timeout || 30000
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), timeout)
+  let timedOut = false
+  const timeoutId = setTimeout(() => {
+    timedOut = true
+    controller.abort()
+  }, timeout)
 
   const headers = new Headers(options.headers)
   if (token) {
@@ -52,7 +56,10 @@ export async function fetchStream(url: string, options: FetchStreamOptions = {})
           headers.set('Authorization', `Bearer ${newToken}`)
 
           // 重新设置超时
-          const retryTimeoutId = setTimeout(() => controller.abort(), timeout)
+          const retryTimeoutId = setTimeout(() => {
+            timedOut = true
+            controller.abort()
+          }, timeout)
 
           response = await fetch(fullUrl, {
             ...options,
@@ -115,7 +122,7 @@ export async function fetchStream(url: string, options: FetchStreamOptions = {})
 
     // 处理超时错误
     if (error.name === 'AbortError') {
-      if (options.signal?.aborted) {
+      if (!timedOut || options.signal?.aborted) {
         // 用户主动取消
         console.log('[fetch-stream] 请求被用户取消')
         options.onDone?.()

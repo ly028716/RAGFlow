@@ -110,6 +110,7 @@ class KnowledgeBaseService(BaseRAGService):
         user_id: int,
         skip: int = 0,
         limit: int = 20,
+        keyword: Optional[str] = None,
     ) -> Tuple[List[KnowledgeBase], int]:
         """
         获取用户的知识库列表
@@ -118,10 +119,15 @@ class KnowledgeBaseService(BaseRAGService):
             user_id: 用户ID
             skip: 跳过的记录数
             limit: 返回的最大记录数
+            keyword: 可选的名称搜索关键词
 
         Returns:
             Tuple[List[KnowledgeBase], int]: (知识库列表, 总数)
         """
+        if keyword and keyword.strip():
+            return self.kb_repo.search_by_name(
+                user_id, keyword.strip(), skip=skip, limit=limit
+            )
         return self.kb_repo.get_by_user(user_id, skip, limit)
 
     def get_by_id(
