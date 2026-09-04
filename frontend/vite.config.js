@@ -13,6 +13,7 @@ import vue from '@vitejs/plugin-vue';
 import Components from 'unplugin-vue-components/vite';
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers';
 import { resolve } from 'path';
+const apiProxyTarget = process.env.VITE_API_PROXY_TARGET || 'http://localhost:8000';
 export default defineConfig({
     plugins: __spreadArray([
         vue()
@@ -34,7 +35,7 @@ export default defineConfig({
         port: 5173,
         proxy: {
             '/api': {
-                target: 'http://localhost:8000',
+                target: apiProxyTarget,
                 changeOrigin: true
             }
         }

@@ -18,7 +18,6 @@ from app.repositories.knowledge_base_repository import KnowledgeBaseRepository
 from app.services.knowledge_base_permission import KnowledgeBasePermissionService
 from app.services.rag.base import BaseRAGService
 from app.services.rag.exceptions import DocumentNotFoundError, KnowledgeBaseNotFoundError
-from app.tasks.document_tasks import process_document_task
 
 logger = logging.getLogger(__name__)
 
@@ -131,6 +130,8 @@ class DocumentActionService(BaseRAGService):
             document_id: 文档ID
         """
         try:
+            from app.tasks.document_tasks import process_document_task
+
             await process_document_task(document_id)
         except Exception as e:
             logger.error(f"后台处理文档失败: document_id={document_id}, error={str(e)}")
