@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "AI智能助手系统",
+    "title": "RAGFlow",
     "summary": "AI智能助手系统API",
     "description": "\n## AI智能助手系统后端API\n\n基于FastAPI和LangChain 0.1.0框架构建的企业级AI智能助手系统，提供以下核心功能：\n\n### 核心功能\n\n* **智能对话** - 支持多轮对话、流式响应、对话历史管理\n* **RAG知识库** - 文档上传、向量化、智能检索问答\n* **Agent智能代理** - 工具调用、任务执行、推理过程可视化\n* **用户管理** - 注册登录、JWT认证、配额管理\n* **系统监控** - 使用统计、健康检查、Prometheus指标\n\n### 技术栈\n\n* **Web框架**: FastAPI 0.104+\n* **AI框架**: LangChain 0.1.0\n* **数据库**: MySQL 8.0, Redis 7.0, Chroma\n* **LLM**: 通义千问 (Tongyi Qianwen)\n\n### 认证方式\n\n大部分API端点需要JWT认证。在请求头中添加：\n```\nAuthorization: Bearer <access_token>\n```\n\n### 速率限制\n\n* 登录接口: 5次/分钟\n* 普通API: 100次/分钟\n* LLM调用: 20次/分钟\n\n### 错误响应格式\n\n所有错误响应遵循统一格式：\n```json\n{\n    \"error_code\": \"1001\",\n    \"message\": \"错误描述\",\n    \"request_id\": \"uuid\"\n}\n```\n    ",
     "termsOfService": "https://example.com/terms/",
@@ -354,6 +354,104 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/auth/profile": {
+      "get": {
+        "tags": [
+          "认证"
+        ],
+        "summary": "获取当前用户信息",
+        "description": "获取当前登录用户的详细信息。",
+        "operationId": "get_profile_api_v1_auth_profile_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "参数验证失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权 - JWT令牌无效或已过期",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "1002",
+                  "message": "令牌已过期",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "禁止访问 - 配额不足或权限不足",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "4001",
+                  "message": "配额已用尽",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "对话不存在",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求过于频繁 - 超出速率限制",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Rate limit exceeded",
+                  "message": "请求过于频繁，请稍后再试"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "3001",
+                  "message": "数据库连接失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/v1/auth/password": {
@@ -1001,7 +1099,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteResponse"
+                  "$ref": "#/components/schemas/app__schemas__conversation__DeleteResponse"
                 }
               }
             }
@@ -1629,7 +1727,7 @@
           "聊天"
         ],
         "summary": "发送消息（流式）",
-        "description": "发送消息到对话，使用SSE协议流式返回AI回复。",
+        "description": "发送消息到对话，使用SSE协议流式返回AI回复。如果conversation_id为null，将自动创建新对话。",
         "operationId": "stream_chat_api_v1_chat_stream_post",
         "requestBody": {
           "content": {
@@ -1841,7 +1939,7 @@
           "配额管理"
         ],
         "summary": "更新用户配额（管理员）",
-        "description": "管理员更新指定用户的月度配额上限。",
+        "description": "管理员更新指定用户的月度配额上限。需要管理员权限。",
         "operationId": "update_quota_api_v1_quota_put",
         "requestBody": {
           "content": {
@@ -1959,7 +2057,7 @@
           "配额管理"
         ],
         "summary": "重置配额（管理员）",
-        "description": "管理员重置指定用户的配额。",
+        "description": "管理员重置指定用户的配额。需要管理员权限。",
         "operationId": "reset_quota_api_v1_quota_reset_post",
         "security": [
           {
@@ -2208,9 +2306,12 @@
             "required": false,
             "schema": {
               "type": "integer",
+              "minimum": 0,
+              "description": "跳过的记录数",
               "default": 0,
               "title": "Skip"
-            }
+            },
+            "description": "跳过的记录数"
           },
           {
             "name": "limit",
@@ -2218,9 +2319,26 @@
             "required": false,
             "schema": {
               "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "返回的最大记录数",
               "default": 20,
               "title": "Limit"
-            }
+            },
+            "description": "返回的最大记录数"
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "description": "按名称搜索",
+              "default": "",
+              "title": "Keyword"
+            },
+            "description": "按名称搜索"
           }
         ],
         "responses": {
@@ -2592,7 +2710,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MessageResponse"
+                  "$ref": "#/components/schemas/app__schemas__knowledge_base__MessageResponse"
                 }
               }
             }
@@ -2968,9 +3086,12 @@
             "required": false,
             "schema": {
               "type": "integer",
+              "minimum": 0,
+              "description": "跳过的记录数",
               "default": 0,
               "title": "Skip"
-            }
+            },
+            "description": "跳过的记录数"
           },
           {
             "name": "limit",
@@ -2978,9 +3099,13 @@
             "required": false,
             "schema": {
               "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "返回的最大记录数",
               "default": 20,
               "title": "Limit"
-            }
+            },
+            "description": "返回的最大记录数"
           }
         ],
         "responses": {
@@ -3326,6 +3451,237 @@
         }
       }
     },
+    "/api/v1/documents/{document_id}/download": {
+      "get": {
+        "tags": [
+          "文档管理"
+        ],
+        "summary": "下载文档",
+        "description": "下载上传的原始文档文件。",
+        "operationId": "download_document_api_v1_documents__document_id__download_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Document Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "参数验证失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权 - JWT令牌无效或已过期",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "1002",
+                  "message": "令牌已过期",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "禁止访问 - 配额不足或权限不足",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "4001",
+                  "message": "配额已用尽",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "对话不存在",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求过于频繁 - 超出速率限制",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Rate limit exceeded",
+                  "message": "请求过于频繁，请稍后再试"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "3001",
+                  "message": "数据库连接失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documents/{document_id}/retry": {
+      "post": {
+        "tags": [
+          "文档管理"
+        ],
+        "summary": "重试文档解析",
+        "description": "对失败/异常的文档重新触发解析与向量化流程。",
+        "operationId": "retry_document_api_v1_documents__document_id__retry_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Document Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "参数验证失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权 - JWT令牌无效或已过期",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "1002",
+                  "message": "令牌已过期",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "禁止访问 - 配额不足或权限不足",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "4001",
+                  "message": "配额已用尽",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "对话不存在",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求过于频繁 - 超出速率限制",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Rate limit exceeded",
+                  "message": "请求过于频繁，请稍后再试"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "3001",
+                  "message": "数据库连接失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/documents/{document_id}": {
       "delete": {
         "tags": [
@@ -3356,7 +3712,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MessageResponse"
+                  "$ref": "#/components/schemas/app__schemas__knowledge_base__MessageResponse"
                 }
               }
             }
@@ -3727,7 +4083,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "$ref": "#/components/schemas/ToolType"
                 },
                 {
                   "type": "null"
@@ -4613,7 +4969,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "$ref": "#/components/schemas/ExecutionStatus"
                 },
                 {
                   "type": "null"
@@ -5367,6 +5723,101 @@
         }
       }
     },
+    "/api/v1/system/ping": {
+      "get": {
+        "tags": [
+          "系统管理"
+        ],
+        "summary": "系统快速存活探针",
+        "description": "不依赖数据库/Redis/向量库的快速存活检查。无需认证。",
+        "operationId": "ping_api_v1_system_ping_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Ping Api V1 System Ping Get"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "参数验证失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权 - JWT令牌无效或已过期",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "1002",
+                  "message": "令牌已过期",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "禁止访问 - 配额不足或权限不足",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "4001",
+                  "message": "配额已用尽",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "对话不存在",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求过于频繁 - 超出速率限制",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Rate limit exceeded",
+                  "message": "请求过于频繁，请稍后再试"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "3001",
+                  "message": "数据库连接失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/system/health": {
       "get": {
         "tags": [
@@ -5558,6 +6009,2238 @@
         ]
       }
     },
+    "/api/v1/prompts": {
+      "get": {
+        "tags": [
+          "系统提示词"
+        ],
+        "summary": "获取提示词列表",
+        "description": "获取系统提示词和用户自定义提示词列表。",
+        "operationId": "get_prompts_api_v1_prompts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "分类筛选",
+              "title": "Category"
+            },
+            "description": "分类筛选"
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "跳过数量",
+              "default": 0,
+              "title": "Skip"
+            },
+            "description": "跳过数量"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "返回数量",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "返回数量"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemPromptListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "参数验证失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权 - JWT令牌无效或已过期",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "1002",
+                  "message": "令牌已过期",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "禁止访问 - 配额不足或权限不足",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "4001",
+                  "message": "配额已用尽",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "对话不存在",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求过于频繁 - 超出速率限制",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Rate limit exceeded",
+                  "message": "请求过于频繁，请稍后再试"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "3001",
+                  "message": "数据库连接失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "系统提示词"
+        ],
+        "summary": "创建提示词",
+        "description": "创建用户自定义提示词。",
+        "operationId": "create_prompt_api_v1_prompts_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SystemPromptCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemPromptResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "参数验证失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权 - JWT令牌无效或已过期",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "1002",
+                  "message": "令牌已过期",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "禁止访问 - 配额不足或权限不足",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "4001",
+                  "message": "配额已用尽",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "对话不存在",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求过于频繁 - 超出速率限制",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Rate limit exceeded",
+                  "message": "请求过于频繁，请稍后再试"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "3001",
+                  "message": "数据库连接失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/prompts/{prompt_id}": {
+      "get": {
+        "tags": [
+          "系统提示词"
+        ],
+        "summary": "获取提示词详情",
+        "description": "获取指定提示词的详细信息。",
+        "operationId": "get_prompt_api_v1_prompts__prompt_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "prompt_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Prompt Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemPromptResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "参数验证失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权 - JWT令牌无效或已过期",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "1002",
+                  "message": "令牌已过期",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "禁止访问 - 配额不足或权限不足",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "4001",
+                  "message": "配额已用尽",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "对话不存在",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求过于频繁 - 超出速率限制",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Rate limit exceeded",
+                  "message": "请求过于频繁，请稍后再试"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "3001",
+                  "message": "数据库连接失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "系统提示词"
+        ],
+        "summary": "更新提示词",
+        "description": "更新用户自定义提示词（不能更新系统提示词）。",
+        "operationId": "update_prompt_api_v1_prompts__prompt_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "prompt_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Prompt Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SystemPromptUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemPromptResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "参数验证失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权 - JWT令牌无效或已过期",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "1002",
+                  "message": "令牌已过期",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "禁止访问 - 配额不足或权限不足",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "4001",
+                  "message": "配额已用尽",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "对话不存在",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求过于频繁 - 超出速率限制",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Rate limit exceeded",
+                  "message": "请求过于频繁，请稍后再试"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "3001",
+                  "message": "数据库连接失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "系统提示词"
+        ],
+        "summary": "删除提示词",
+        "description": "删除用户自定义提示词（不能删除系统提示词）。",
+        "operationId": "delete_prompt_api_v1_prompts__prompt_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "prompt_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Prompt Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "参数验证失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权 - JWT令牌无效或已过期",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "1002",
+                  "message": "令牌已过期",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "禁止访问 - 配额不足或权限不足",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "4001",
+                  "message": "配额已用尽",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "对话不存在",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求过于频繁 - 超出速率限制",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Rate limit exceeded",
+                  "message": "请求过于频繁，请稍后再试"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "3001",
+                  "message": "数据库连接失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/prompts/{prompt_id}/default": {
+      "put": {
+        "tags": [
+          "系统提示词"
+        ],
+        "summary": "设为默认提示词",
+        "description": "将指定提示词设为用户的默认提示词。",
+        "operationId": "set_default_prompt_api_v1_prompts__prompt_id__default_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "prompt_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Prompt Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetDefaultPromptResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "参数验证失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权 - JWT令牌无效或已过期",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "1002",
+                  "message": "令牌已过期",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "禁止访问 - 配额不足或权限不足",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "4001",
+                  "message": "配额已用尽",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "对话不存在",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求过于频繁 - 超出速率限制",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Rate limit exceeded",
+                  "message": "请求过于频繁，请稍后再试"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "3001",
+                  "message": "数据库连接失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/user/profile": {
+      "get": {
+        "tags": [
+          "用户"
+        ],
+        "summary": "获取当前用户信息",
+        "description": "获取当前登录用户的详细信息。",
+        "operationId": "get_profile_api_v1_user_profile_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "参数验证失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权 - JWT令牌无效或已过期",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "1002",
+                  "message": "令牌已过期",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "禁止访问 - 配额不足或权限不足",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "4001",
+                  "message": "配额已用尽",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "对话不存在",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求过于频繁 - 超出速率限制",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Rate limit exceeded",
+                  "message": "请求过于频繁，请稍后再试"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "3001",
+                  "message": "数据库连接失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "用户"
+        ],
+        "summary": "更新用户信息",
+        "description": "更新当前用户的个人信息。",
+        "operationId": "update_profile_api_v1_user_profile_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserProfileUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "参数验证失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权 - JWT令牌无效或已过期",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "1002",
+                  "message": "令牌已过期",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "禁止访问 - 配额不足或权限不足",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "4001",
+                  "message": "配额已用尽",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "对话不存在",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求过于频繁 - 超出速率限制",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Rate limit exceeded",
+                  "message": "请求过于频繁，请稍后再试"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "3001",
+                  "message": "数据库连接失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/user/avatar": {
+      "post": {
+        "tags": [
+          "用户"
+        ],
+        "summary": "上传头像",
+        "description": "上传用户头像，支持JPEG、PNG、GIF、WebP格式，最大2MB。",
+        "operationId": "upload_avatar_api_v1_user_avatar_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_avatar_api_v1_user_avatar_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarUploadResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "参数验证失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权 - JWT令牌无效或已过期",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "1002",
+                  "message": "令牌已过期",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "禁止访问 - 配额不足或权限不足",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "4001",
+                  "message": "配额已用尽",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "对话不存在",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求过于频繁 - 超出速率限制",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Rate limit exceeded",
+                  "message": "请求过于频繁，请稍后再试"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "3001",
+                  "message": "数据库连接失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "用户"
+        ],
+        "summary": "删除头像",
+        "description": "删除当前用户的头像。",
+        "operationId": "delete_avatar_api_v1_user_avatar_delete",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarDeleteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "参数验证失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权 - JWT令牌无效或已过期",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "1002",
+                  "message": "令牌已过期",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "禁止访问 - 配额不足或权限不足",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "4001",
+                  "message": "配额已用尽",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "对话不存在",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求过于频繁 - 超出速率限制",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Rate limit exceeded",
+                  "message": "请求过于频繁，请稍后再试"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "3001",
+                  "message": "数据库连接失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/user/avatar/{user_id}": {
+      "get": {
+        "tags": [
+          "用户"
+        ],
+        "summary": "获取用户头像",
+        "description": "获取指定用户的头像文件。",
+        "operationId": "get_avatar_api_v1_user_avatar__user_id__get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "参数验证失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权 - JWT令牌无效或已过期",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "1002",
+                  "message": "令牌已过期",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "禁止访问 - 配额不足或权限不足",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "4001",
+                  "message": "配额已用尽",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "对话不存在",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求过于频繁 - 超出速率限制",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Rate limit exceeded",
+                  "message": "请求过于频繁，请稍后再试"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "3001",
+                  "message": "数据库连接失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/user/deletion/request": {
+      "post": {
+        "tags": [
+          "用户"
+        ],
+        "summary": "请求注销账号",
+        "description": "请求注销账号，需要验证密码。注销请求后有7天冷静期，期间可以取消。",
+        "operationId": "request_deletion_api_v1_user_deletion_request_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeletionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletionRequestResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "参数验证失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权 - JWT令牌无效或已过期",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "1002",
+                  "message": "令牌已过期",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "禁止访问 - 配额不足或权限不足",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "4001",
+                  "message": "配额已用尽",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "对话不存在",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求过于频繁 - 超出速率限制",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Rate limit exceeded",
+                  "message": "请求过于频繁，请稍后再试"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "3001",
+                  "message": "数据库连接失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/user/deletion/cancel": {
+      "post": {
+        "tags": [
+          "用户"
+        ],
+        "summary": "取消注销请求",
+        "description": "在冷静期内取消注销请求，恢复账号正常状态。",
+        "operationId": "cancel_deletion_api_v1_user_deletion_cancel_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletionCancelResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "参数验证失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权 - JWT令牌无效或已过期",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "1002",
+                  "message": "令牌已过期",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "禁止访问 - 配额不足或权限不足",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "4001",
+                  "message": "配额已用尽",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "对话不存在",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求过于频繁 - 超出速率限制",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Rate limit exceeded",
+                  "message": "请求过于频繁，请稍后再试"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "3001",
+                  "message": "数据库连接失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/user/deletion/status": {
+      "get": {
+        "tags": [
+          "用户"
+        ],
+        "summary": "查询注销状态",
+        "description": "查询当前账号的注销状态，包括是否有待处理的注销请求、剩余冷静期等信息。",
+        "operationId": "get_deletion_status_api_v1_user_deletion_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletionStatusResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "参数验证失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权 - JWT令牌无效或已过期",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "1002",
+                  "message": "令牌已过期",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "禁止访问 - 配额不足或权限不足",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "4001",
+                  "message": "配额已用尽",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "对话不存在",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求过于频繁 - 超出速率限制",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Rate limit exceeded",
+                  "message": "请求过于频繁，请稍后再试"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "3001",
+                  "message": "数据库连接失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/knowledge-bases/{kb_id}/permissions": {
+      "get": {
+        "tags": [
+          "知识库权限"
+        ],
+        "summary": "获取权限列表",
+        "description": "获取知识库的权限列表。所有者可以看到所有权限，其他用户只能看到自己的权限。",
+        "operationId": "get_permissions_api_v1_knowledge_bases__kb_id__permissions_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "kb_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Kb Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "参数验证失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权 - JWT令牌无效或已过期",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "1002",
+                  "message": "令牌已过期",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "禁止访问 - 配额不足或权限不足",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "4001",
+                  "message": "配额已用尽",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "对话不存在",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求过于频繁 - 超出速率限制",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Rate limit exceeded",
+                  "message": "请求过于频繁，请稍后再试"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "3001",
+                  "message": "数据库连接失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "知识库权限"
+        ],
+        "summary": "添加权限",
+        "description": "为知识库添加用户权限（仅所有者可操作）。",
+        "operationId": "add_permission_api_v1_knowledge_bases__kb_id__permissions_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "kb_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Kb Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PermissionCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "参数验证失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权 - JWT令牌无效或已过期",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "1002",
+                  "message": "令牌已过期",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "禁止访问 - 配额不足或权限不足",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "4001",
+                  "message": "配额已用尽",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "对话不存在",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求过于频繁 - 超出速率限制",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Rate limit exceeded",
+                  "message": "请求过于频繁，请稍后再试"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "3001",
+                  "message": "数据库连接失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/knowledge-bases/{kb_id}/permissions/{permission_id}": {
+      "put": {
+        "tags": [
+          "知识库权限"
+        ],
+        "summary": "更新权限",
+        "description": "更新知识库的用户权限（仅所有者可操作）。",
+        "operationId": "update_permission_api_v1_knowledge_bases__kb_id__permissions__permission_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "kb_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Kb Id"
+            }
+          },
+          {
+            "name": "permission_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Permission Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PermissionUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "参数验证失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权 - JWT令牌无效或已过期",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "1002",
+                  "message": "令牌已过期",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "禁止访问 - 配额不足或权限不足",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "4001",
+                  "message": "配额已用尽",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "对话不存在",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求过于频繁 - 超出速率限制",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Rate limit exceeded",
+                  "message": "请求过于频繁，请稍后再试"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "3001",
+                  "message": "数据库连接失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "知识库权限"
+        ],
+        "summary": "删除权限",
+        "description": "删除知识库的用户权限（仅所有者可操作）。",
+        "operationId": "delete_permission_api_v1_knowledge_bases__kb_id__permissions__permission_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "kb_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Kb Id"
+            }
+          },
+          {
+            "name": "permission_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Permission Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "参数验证失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权 - JWT令牌无效或已过期",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "1002",
+                  "message": "令牌已过期",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "禁止访问 - 配额不足或权限不足",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "4001",
+                  "message": "配额已用尽",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "对话不存在",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求过于频繁 - 超出速率限制",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Rate limit exceeded",
+                  "message": "请求过于频繁，请稍后再试"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "3001",
+                  "message": "数据库连接失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/knowledge-bases/{kb_id}/share": {
+      "post": {
+        "tags": [
+          "知识库权限"
+        ],
+        "summary": "分享知识库",
+        "description": "通过用户名分享知识库（仅所有者可操作）。",
+        "operationId": "share_knowledge_base_api_v1_knowledge_bases__kb_id__share_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "kb_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Kb Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShareKnowledgeBaseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "参数验证失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权 - JWT令牌无效或已过期",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "1002",
+                  "message": "令牌已过期",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "禁止访问 - 配额不足或权限不足",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "4001",
+                  "message": "配额已用尽",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "2001",
+                  "message": "对话不存在",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求过于频繁 - 超出速率限制",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Rate limit exceeded",
+                  "message": "请求过于频繁，请稍后再试"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error_code": "3001",
+                  "message": "数据库连接失败",
+                  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "tags": [
@@ -5655,7 +8338,7 @@
           "监控"
         ],
         "summary": "Health Check",
-        "description": "健康检查端点\n\n检查应用运行状态和各组件健康状况。\n\nReturns:\n    dict: 健康状态信息，包括应用状态、调度器状态等\n    \nExample:\n    ```json\n    {\n        \"status\": \"healthy\",\n        \"app_name\": \"AI智能助手系统\",\n        \"version\": \"1.0.0\",\n        \"environment\": \"development\",\n        \"scheduler\": \"running\",\n        \"scheduled_jobs\": 2\n    }\n    ```",
+        "description": "健康检查端点\n\n检查应用运行状态和各组件健康状况。\n\nReturns:\n    dict: 健康状态信息，包括应用状态、调度器状态等\n\nExample:\n    ```json\n    {\n        \"status\": \"healthy\",\n        \"app_name\": \"AI智能助手系统\",\n        \"version\": \"1.0.0\",\n        \"environment\": \"development\",\n        \"scheduler\": \"running\",\n        \"scheduled_jobs\": 2\n    }\n    ```",
         "operationId": "health_check_health_get",
         "responses": {
           "200": {
@@ -5746,7 +8429,7 @@
           "监控"
         ],
         "summary": "List Scheduled Jobs",
-        "description": "列出所有定时任务\n\n显示系统中配置的所有定时任务及其执行状态。\n\nReturns:\n    dict: 定时任务列表，包括任务ID、名称、下次执行时间等\n    \nExample:\n    ```json\n    {\n        \"enabled\": true,\n        \"running\": true,\n        \"job_count\": 2,\n        \"jobs\": [\n            {\n                \"id\": \"reset_monthly_quotas\",\n                \"name\": \"重置月度配额\",\n                \"next_run_time\": \"2025-02-01T00:00:00\",\n                \"trigger\": \"cron[month='*', day='1', hour='0', minute='0']\"\n            }\n        ]\n    }\n    ```",
+        "description": "列出所有定时任务\n\n显示系统中配置的所有定时任务及其执行状态。\n\nReturns:\n    dict: 定时任务列表，包括任务ID、名称、下次执行时间等\n\nExample:\n    ```json\n    {\n        \"enabled\": true,\n        \"running\": true,\n        \"job_count\": 2,\n        \"jobs\": [\n            {\n                \"id\": \"reset_monthly_quotas\",\n                \"name\": \"重置月度配额\",\n                \"next_run_time\": \"2025-02-01T00:00:00\",\n                \"trigger\": \"cron[month='*', day='1', hour='0', minute='0']\"\n            }\n        ]\n    }\n    ```",
         "operationId": "list_scheduled_jobs_scheduler_jobs_get",
         "responses": {
           "200": {
@@ -5837,7 +8520,7 @@
           "监控"
         ],
         "summary": "Metrics",
-        "description": "Prometheus监控指标端点\n\n返回Prometheus格式的监控指标，用于系统监控和告警。\n\n**可用指标:**\n\n* `http_requests_total` - HTTP请求总数（按方法、路径、状态码分组）\n* `http_request_duration_seconds` - HTTP请求时长分布\n* `http_requests_active` - 当前活跃的HTTP请求数\n* `llm_calls_total` - LLM调用总数（按模型分组）\n* `llm_tokens_total` - LLM token使用总量（按类型分组）\n* `db_connections_active` - 数据库活跃连接数\n* `redis_connection_status` - Redis连接状态\n\n需求引用:\n    - 需求8.1: 提供监控指标接口\n\nReturns:\n    Response: Prometheus格式的指标数据（text/plain格式）\n    \nExample:\n    ```\n    # HELP http_requests_total Total HTTP requests\n    # TYPE http_requests_total counter\n    http_requests_total{method=\"GET\",path=\"/api/v1/conversations\",status=\"200\"} 1523.0\n    \n    # HELP http_request_duration_seconds HTTP request duration\n    # TYPE http_request_duration_seconds histogram\n    http_request_duration_seconds_bucket{le=\"0.1\"} 1234.0\n    ```",
+        "description": "Prometheus监控指标端点\n\n返回Prometheus格式的监控指标，用于系统监控和告警。\n\n**可用指标:**\n\n* `http_requests_total` - HTTP请求总数（按方法、路径、状态码分组）\n* `http_request_duration_seconds` - HTTP请求时长分布\n* `http_requests_active` - 当前活跃的HTTP请求数\n* `llm_calls_total` - LLM调用总数（按模型分组）\n* `llm_tokens_total` - LLM token使用总量（按类型分组）\n* `db_connections_active` - 数据库活跃连接数\n* `redis_connection_status` - Redis连接状态\n\n需求引用:\n    - 需求8.1: 提供监控指标接口\n\nReturns:\n    Response: Prometheus格式的指标数据（text/plain格式）\n\nExample:\n    ```\n    # HELP http_requests_total Total HTTP requests\n    # TYPE http_requests_total counter\n    http_requests_total{method=\"GET\",path=\"/api/v1/conversations\",status=\"200\"} 1523.0\n\n    # HELP http_request_duration_seconds HTTP request duration\n    # TYPE http_request_duration_seconds histogram\n    http_request_duration_seconds_bucket{le=\"0.1\"} 1234.0\n    ```",
         "operationId": "metrics_metrics_get",
         "responses": {
           "200": {
@@ -5970,8 +8653,15 @@
             "description": "执行的动作/工具"
           },
           "action_input": {
-            "additionalProperties": true,
-            "type": "object",
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "string"
+              }
+            ],
             "title": "Action Input",
             "description": "动作输入参数"
           },
@@ -5979,6 +8669,40 @@
             "type": "string",
             "title": "Observation",
             "description": "观察结果"
+          },
+          "citations": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Citations",
+            "description": "检索引用片段"
+          },
+          "citation_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Citation Count",
+            "description": "引用片段数量",
+            "default": 0
+          },
+          "phase": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phase",
+            "description": "受限 RAG 工作流阶段"
+          },
+          "data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data",
+            "description": "结构化步骤数据和指标"
           },
           "timestamp": {
             "anyOf": [
@@ -6003,6 +8727,54 @@
         ],
         "title": "AgentStep",
         "description": "Agent执行步骤模型"
+      },
+      "AvatarDeleteResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "是否成功"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "响应消息"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "AvatarDeleteResponse",
+        "description": "删除头像响应"
+      },
+      "AvatarUploadResponse": {
+        "properties": {
+          "avatar_url": {
+            "type": "string",
+            "title": "Avatar Url",
+            "description": "头像URL"
+          },
+          "thumbnail_url": {
+            "type": "string",
+            "title": "Thumbnail Url",
+            "description": "缩略图URL"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "响应消息",
+            "default": "头像上传成功"
+          }
+        },
+        "type": "object",
+        "required": [
+          "avatar_url",
+          "thumbnail_url"
+        ],
+        "title": "AvatarUploadResponse",
+        "description": "头像上传响应"
       },
       "BatchUploadResponse": {
         "properties": {
@@ -6030,6 +8802,21 @@
         ],
         "title": "BatchUploadResponse",
         "description": "批量上传响应"
+      },
+      "Body_upload_avatar_api_v1_user_avatar_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File",
+            "description": "头像文件"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_avatar_api_v1_user_avatar_post"
       },
       "Body_upload_document_api_v1_documents_upload_post": {
         "properties": {
@@ -6097,7 +8884,8 @@
         "enum": [
           "normal",
           "professional",
-          "creative"
+          "creative",
+          "rag"
         ],
         "title": "ChatModeEnum",
         "description": "对话模式枚举"
@@ -6105,12 +8893,20 @@
       "ChatRequest": {
         "properties": {
           "conversation_id": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Conversation Id",
-            "description": "对话ID",
+            "description": "对话ID，为null时自动创建新对话",
             "examples": [
               1,
-              42
+              42,
+              null
             ]
           },
           "content": {
@@ -6123,6 +8919,21 @@
               "你好，请介绍一下Python",
               "什么是机器学习？"
             ]
+          },
+          "knowledge_base_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Knowledge Base Ids",
+            "description": "使用的知识库ID列表"
           },
           "config": {
             "anyOf": [
@@ -6138,11 +8949,10 @@
         },
         "type": "object",
         "required": [
-          "conversation_id",
           "content"
         ],
         "title": "ChatRequest",
-        "description": "聊天请求模型\n\n用于发送消息到对话。",
+        "description": "聊天请求模型\n\n用于发送消息到对话。\n如果conversation_id为null，将自动创建新对话。",
         "examples": [
           {
             "config": {
@@ -6159,8 +8969,7 @@
               "mode": "professional",
               "temperature": 0.3
             },
-            "content": "帮我写一个快速排序算法",
-            "conversation_id": 2
+            "content": "帮我写一个快速排序算法"
           }
         ]
       },
@@ -6485,8 +9294,13 @@
         "title": "DailyStats",
         "description": "每日统计"
       },
-      "DeleteResponse": {
+      "DeletionCancelResponse": {
         "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "是否成功"
+          },
           "message": {
             "type": "string",
             "title": "Message",
@@ -6495,10 +9309,190 @@
         },
         "type": "object",
         "required": [
+          "success",
           "message"
         ],
-        "title": "DeleteResponse",
-        "description": "删除响应模型"
+        "title": "DeletionCancelResponse",
+        "description": "取消注销响应"
+      },
+      "DeletionRequest": {
+        "properties": {
+          "password": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Password",
+            "description": "用户密码（用于验证身份）"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason",
+            "description": "注销原因"
+          }
+        },
+        "type": "object",
+        "required": [
+          "password"
+        ],
+        "title": "DeletionRequest",
+        "description": "账号注销请求"
+      },
+      "DeletionRequestResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "是否成功"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "响应消息"
+          },
+          "requested_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested At",
+            "description": "请求时间"
+          },
+          "scheduled_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled At",
+            "description": "计划删除时间"
+          },
+          "cooldown_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cooldown Days",
+            "description": "冷静期天数"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "DeletionRequestResponse",
+        "description": "账号注销请求响应"
+      },
+      "DeletionStatusResponse": {
+        "properties": {
+          "has_deletion_request": {
+            "type": "boolean",
+            "title": "Has Deletion Request",
+            "description": "是否有注销请求"
+          },
+          "requested_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested At",
+            "description": "请求时间"
+          },
+          "scheduled_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled At",
+            "description": "计划删除时间"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason",
+            "description": "注销原因"
+          },
+          "remaining_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remaining Days",
+            "description": "剩余天数"
+          },
+          "remaining_hours": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remaining Hours",
+            "description": "剩余小时数"
+          },
+          "can_cancel": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Cancel",
+            "description": "是否可以取消"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "状态消息"
+          }
+        },
+        "type": "object",
+        "required": [
+          "has_deletion_request",
+          "message"
+        ],
+        "title": "DeletionStatusResponse",
+        "description": "注销状态响应"
       },
       "DocumentChunkResponse": {
         "properties": {
@@ -6943,6 +9937,17 @@
         "title": "ExecutionResponse",
         "description": "执行记录响应模型"
       },
+      "ExecutionStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "running",
+          "completed",
+          "failed"
+        ],
+        "title": "ExecutionStatus",
+        "description": "执行状态枚举\n\n- pending: 等待执行\n- running: 执行中\n- completed: 执行完成\n- failed: 执行失败"
+      },
       "ExportFormatEnum": {
         "type": "string",
         "enum": [
@@ -7230,21 +10235,6 @@
         "title": "KnowledgeBaseUpdate",
         "description": "更新知识库请求"
       },
-      "MessageResponse": {
-        "properties": {
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "description": "消息内容"
-          }
-        },
-        "type": "object",
-        "required": [
-          "message"
-        ],
-        "title": "MessageResponse",
-        "description": "通用消息响应"
-      },
       "MessageRoleEnum": {
         "type": "string",
         "enum": [
@@ -7288,6 +10278,138 @@
             "old_password": "OldPassword123"
           }
         ]
+      },
+      "PermissionCreate": {
+        "properties": {
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id",
+            "description": "用户ID（null表示公开权限）"
+          },
+          "permission_type": {
+            "type": "string",
+            "pattern": "^(owner|editor|viewer)$",
+            "title": "Permission Type",
+            "description": "权限类型: owner/editor/viewer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "permission_type"
+        ],
+        "title": "PermissionCreate",
+        "description": "创建权限请求"
+      },
+      "PermissionListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PermissionResponse"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "权限列表"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "总数"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "PermissionListResponse",
+        "description": "权限列表响应"
+      },
+      "PermissionResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "权限ID"
+          },
+          "knowledge_base_id": {
+            "type": "integer",
+            "title": "Knowledge Base Id",
+            "description": "知识库ID"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id",
+            "description": "用户ID"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username",
+            "description": "用户名"
+          },
+          "permission_type": {
+            "type": "string",
+            "title": "Permission Type",
+            "description": "权限类型"
+          },
+          "is_public": {
+            "type": "boolean",
+            "title": "Is Public",
+            "description": "是否公开"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "创建时间"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "knowledge_base_id",
+          "permission_type",
+          "is_public",
+          "created_at"
+        ],
+        "title": "PermissionResponse",
+        "description": "权限响应"
+      },
+      "PermissionUpdate": {
+        "properties": {
+          "permission_type": {
+            "type": "string",
+            "pattern": "^(owner|editor|viewer)$",
+            "title": "Permission Type",
+            "description": "权限类型: owner/editor/viewer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "permission_type"
+        ],
+        "title": "PermissionUpdate",
+        "description": "更新权限请求"
       },
       "QuotaResponse": {
         "properties": {
@@ -7481,13 +10603,25 @@
             "type": "integer",
             "title": "Tokens Used",
             "description": "消耗的token数量"
+          },
+          "retrieval_time_ms": {
+            "type": "number",
+            "title": "Retrieval Time Ms",
+            "description": "检索耗时（毫秒）"
+          },
+          "generation_time_ms": {
+            "type": "number",
+            "title": "Generation Time Ms",
+            "description": "生成耗时（毫秒）"
           }
         },
         "type": "object",
         "required": [
           "answer",
           "sources",
-          "tokens_used"
+          "tokens_used",
+          "retrieval_time_ms",
+          "generation_time_ms"
         ],
         "title": "RAGQueryResponse",
         "description": "RAG查询响应"
@@ -7506,6 +10640,51 @@
         ],
         "title": "RefreshTokenRequest",
         "description": "刷新令牌请求模型"
+      },
+      "SetDefaultPromptResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "是否成功"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "响应消息"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "SetDefaultPromptResponse",
+        "description": "设置默认提示词响应"
+      },
+      "ShareKnowledgeBaseRequest": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Username",
+            "description": "目标用户名"
+          },
+          "permission_type": {
+            "type": "string",
+            "pattern": "^(editor|viewer)$",
+            "title": "Permission Type",
+            "description": "权限类型: editor/viewer",
+            "default": "viewer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username"
+        ],
+        "title": "ShareKnowledgeBaseRequest",
+        "description": "分享知识库请求"
       },
       "SystemConfigResponse": {
         "properties": {
@@ -7808,6 +10987,200 @@
         "title": "SystemInfoUptime",
         "description": "系统运行时间"
       },
+      "SystemPromptCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "description": "提示词名称"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Content",
+            "description": "提示词内容"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(general|professional|creative)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category",
+            "description": "分类: general/professional/creative",
+            "default": "general"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "content"
+        ],
+        "title": "SystemPromptCreate",
+        "description": "创建系统提示词请求"
+      },
+      "SystemPromptListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SystemPromptResponse"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "提示词列表"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "总数"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "SystemPromptListResponse",
+        "description": "系统提示词列表响应"
+      },
+      "SystemPromptResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "description": "提示词名称"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Content",
+            "description": "提示词内容"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(general|professional|creative)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category",
+            "description": "分类: general/professional/creative",
+            "default": "general"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "提示词ID"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id",
+            "description": "用户ID"
+          },
+          "is_default": {
+            "type": "boolean",
+            "title": "Is Default",
+            "description": "是否为默认提示词"
+          },
+          "is_system": {
+            "type": "boolean",
+            "title": "Is System",
+            "description": "是否为系统内置"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "创建时间"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At",
+            "description": "更新时间"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "content",
+          "id",
+          "is_default",
+          "is_system",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "SystemPromptResponse",
+        "description": "系统提示词响应"
+      },
+      "SystemPromptUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "提示词名称"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content",
+            "description": "提示词内容"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(general|professional|creative)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category",
+            "description": "分类: general/professional/creative"
+          }
+        },
+        "type": "object",
+        "title": "SystemPromptUpdate",
+        "description": "更新系统提示词请求"
+      },
       "TaskExecuteRequest": {
         "properties": {
           "task": {
@@ -7817,20 +11190,21 @@
             "title": "Task",
             "description": "任务描述"
           },
-          "tool_ids": {
+          "knowledge_base_ids": {
             "anyOf": [
               {
                 "items": {
                   "type": "integer"
                 },
-                "type": "array"
+                "type": "array",
+                "minItems": 1
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Tool Ids",
-            "description": "要使用的工具ID列表（可选，默认使用所有启用的工具）"
+            "title": "Knowledge Base Ids",
+            "description": "Agent 可检索的知识库 ID 范围"
           },
           "max_iterations": {
             "type": "integer",
@@ -8056,6 +11430,15 @@
         ],
         "title": "ToolResponse",
         "description": "工具响应模型"
+      },
+      "ToolType": {
+        "type": "string",
+        "enum": [
+          "builtin",
+          "custom"
+        ],
+        "title": "ToolType",
+        "description": "工具类型枚举\n\n- builtin: 内置工具（系统预定义）\n- custom: 自定义工具（用户创建）"
       },
       "ToolUpdate": {
         "properties": {
@@ -8289,6 +11672,129 @@
           }
         ]
       },
+      "UserProfileResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "用户ID"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username",
+            "description": "用户名"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email",
+            "description": "邮箱"
+          },
+          "avatar": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar",
+            "description": "头像URL"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "创建时间"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "description": "是否激活"
+          },
+          "is_admin": {
+            "type": "boolean",
+            "title": "Is Admin",
+            "description": "是否为管理员",
+            "default": false
+          },
+          "deletion_requested_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deletion Requested At",
+            "description": "注销请求时间"
+          },
+          "deletion_scheduled_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deletion Scheduled At",
+            "description": "计划删除时间"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "username",
+          "created_at",
+          "is_active"
+        ],
+        "title": "UserProfileResponse",
+        "description": "用户信息响应"
+      },
+      "UserProfileUpdate": {
+        "properties": {
+          "nickname": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nickname",
+            "description": "昵称"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email",
+            "description": "邮箱"
+          }
+        },
+        "type": "object",
+        "title": "UserProfileUpdate",
+        "description": "更新用户信息请求"
+      },
       "UserQuotaInfo": {
         "properties": {
           "monthly_quota": {
@@ -8351,22 +11857,6 @@
               "Password123",
               "SecurePass456"
             ]
-          },
-          "email": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Email",
-            "description": "邮箱地址（可选）",
-            "examples": [
-              "user@example.com",
-              "john.doe@company.com"
-            ]
           }
         },
         "type": "object",
@@ -8378,13 +11868,8 @@
         "description": "用户注册请求模型\n\n需求引用:\n    - 需求1.1: 用户名唯一且密码强度符合要求（至少8位，包含字母和数字）",
         "examples": [
           {
-            "email": "test@example.com",
             "password": "Password123",
             "username": "testuser"
-          },
-          {
-            "password": "SecurePass456",
-            "username": "john_doe"
           }
         ]
       },
@@ -8509,6 +11994,21 @@
         "title": "MessageResponse",
         "description": "通用消息响应模型"
       },
+      "app__schemas__conversation__DeleteResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "响应消息"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "DeleteResponse",
+        "description": "删除响应模型"
+      },
       "app__schemas__conversation__MessageResponse": {
         "properties": {
           "id": {
@@ -8553,6 +12053,21 @@
         ],
         "title": "MessageResponse",
         "description": "消息响应模型"
+      },
+      "app__schemas__knowledge_base__MessageResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "消息内容"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "MessageResponse",
+        "description": "通用消息响应"
       }
     },
     "securitySchemes": {

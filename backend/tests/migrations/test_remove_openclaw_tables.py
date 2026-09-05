@@ -68,20 +68,23 @@ def test_upgrade_removes_only_openclaw_tables_and_their_indexes(monkeypatch: pyt
 
     migration.upgrade()
 
-    assert operations.dropped_indexes == [
-        ("ix_openclaw_tool_calls_created_at", "openclaw_tool_calls"),
-        ("ix_openclaw_tool_calls_status", "openclaw_tool_calls"),
-        ("ix_openclaw_tool_calls_user_id", "openclaw_tool_calls"),
-        ("ix_openclaw_tool_calls_agent_id", "openclaw_tool_calls"),
-        ("ix_openclaw_tool_calls_tool_id", "openclaw_tool_calls"),
-        ("ix_openclaw_tool_calls_id", "openclaw_tool_calls"),
-        ("ix_openclaw_tools_status", "openclaw_tools"),
-        ("ix_openclaw_tools_name", "openclaw_tools"),
-        ("ix_openclaw_tools_id", "openclaw_tools"),
-    ]
+    assert operations.dropped_indexes == []
     assert operations.dropped_tables == ["openclaw_tool_calls", "openclaw_tools"]
     assert "web_scraper_tasks" not in operations.dropped_tables
     assert "web_scraper_logs" not in operations.dropped_tables
+
+
+def test_upgrade_relies_on_table_drop_for_foreign_key_backed_indexes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """MySQL removes dependent indexes when the obsolete tables are dropped."""
+    migration = load_migration()
+    operations = OperationsRecorder()
+    monkeypatch.setattr(migration, "op", operations)
+
+    migration.upgrade()
+
+    assert operations.dropped_indexes == []
 
 
 def test_downgrade_restores_the_openclaw_schema_from_migration_009(

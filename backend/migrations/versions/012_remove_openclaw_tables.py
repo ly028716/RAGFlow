@@ -18,18 +18,9 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    """Remove the two obsolete OpenClaw tables and their indexes."""
-    op.drop_index("ix_openclaw_tool_calls_created_at", table_name="openclaw_tool_calls")
-    op.drop_index("ix_openclaw_tool_calls_status", table_name="openclaw_tool_calls")
-    op.drop_index("ix_openclaw_tool_calls_user_id", table_name="openclaw_tool_calls")
-    op.drop_index("ix_openclaw_tool_calls_agent_id", table_name="openclaw_tool_calls")
-    op.drop_index("ix_openclaw_tool_calls_tool_id", table_name="openclaw_tool_calls")
-    op.drop_index("ix_openclaw_tool_calls_id", table_name="openclaw_tool_calls")
+    """Remove obsolete tables; MySQL drops their foreign-key indexes with them."""
     op.drop_table("openclaw_tool_calls")
 
-    op.drop_index("ix_openclaw_tools_status", table_name="openclaw_tools")
-    op.drop_index("ix_openclaw_tools_name", table_name="openclaw_tools")
-    op.drop_index("ix_openclaw_tools_id", table_name="openclaw_tools")
     op.drop_table("openclaw_tools")
 
 

@@ -45,20 +45,6 @@ class TestAuthAPI:
         assert not re.match(pattern, "user@name")  # 包含特殊字符
         assert not re.match(pattern, "a" * 21)  # 太长
 
-    def test_email_validation(self):
-        """测试邮箱验证规则"""
-        import re
-        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        
-        # 有效邮箱
-        assert re.match(pattern, "test@example.com")
-        assert re.match(pattern, "user.name@domain.org")
-        
-        # 无效邮箱
-        assert not re.match(pattern, "invalid-email")
-        assert not re.match(pattern, "@nodomain.com")
-        assert not re.match(pattern, "no@domain")
-
     def test_token_structure(self):
         """测试 Token 响应结构"""
         expected_fields = ['access_token', 'refresh_token', 'token_type', 'expires_in']

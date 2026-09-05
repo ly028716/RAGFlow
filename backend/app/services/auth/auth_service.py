@@ -31,7 +31,7 @@ class AuthService:
 
     使用方式:
         auth_service = AuthService(db)
-        user = auth_service.register("username", "password123", "email@example.com")
+        user = auth_service.register("username", "password123")
         tokens = auth_service.login("username", "password123", "127.0.0.1")
     """
 
@@ -48,9 +48,7 @@ class AuthService:
         self._password_service = PasswordService(db)
         self._lockout_service = LockoutService()
 
-    def register(
-        self, username: str, password: str, email: Optional[str] = None
-    ) -> User:
+    def register(self, username: str, password: str) -> User:
         """
         用户注册
 
@@ -59,15 +57,13 @@ class AuthService:
         Args:
             username: 用户名（必须唯一）
             password: 明文密码（至少8位，包含字母和数字）
-            email: 邮箱地址（可选，必须唯一）
-
         Returns:
             User: 创建的用户对象
 
         Raises:
-            UserAlreadyExistsError: 用户名或邮箱已存在
+            UserAlreadyExistsError: 用户名已存在
         """
-        return self._registration_service.register(username, password, email)
+        return self._registration_service.register(username, password)
 
     def login(self, username: str, password: str, ip_address: str = "0.0.0.0") -> dict:
         """

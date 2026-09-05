@@ -32,35 +32,16 @@ class UserRegister(BaseModel):
         description="密码（至少8位，包含字母和数字）",
         examples=["Password123", "SecurePass456"],
     )
-    email: Optional[str] = Field(
-        default=None,
-        description="邮箱地址（可选）",
-        examples=["user@example.com", "john.doe@company.com"],
-    )
-
     model_config = {
         "json_schema_extra": {
             "examples": [
                 {
                     "username": "testuser",
                     "password": "Password123",
-                    "email": "test@example.com",
-                },
-                {"username": "john_doe", "password": "SecurePass456"},
+                }
             ]
         }
     }
-
-    @field_validator("email")
-    @classmethod
-    def validate_email(cls, v: Optional[str]) -> Optional[str]:
-        """验证邮箱格式"""
-        if v is None:
-            return v
-        email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-        if not re.match(email_pattern, v):
-            raise ValueError("邮箱格式不正确")
-        return v
 
     @field_validator("password")
     @classmethod

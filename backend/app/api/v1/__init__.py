@@ -18,7 +18,6 @@ from app.api.v1.quota import router as quota_router
 from app.api.v1.rag import router as rag_router
 from app.api.v1.system import router as system_router
 from app.api.v1.user import router as user_router
-from app.api.v1.verification import router as verification_router
 
 # 创建v1 API路由器
 api_router = APIRouter(prefix="/api/v1")
@@ -33,7 +32,6 @@ api_router.include_router(documents_router)
 api_router.include_router(rag_router)
 api_router.include_router(agent_router)
 api_router.include_router(system_router)
-api_router.include_router(verification_router)
 api_router.include_router(prompts_router)
 api_router.include_router(user_router)
 api_router.include_router(kb_permissions_router)
@@ -51,7 +49,6 @@ __all__ = [
     "rag_router",
     "agent_router",
     "system_router",
-    "verification_router",
     "prompts_router",
     "user_router",
     "kb_permissions_router",
