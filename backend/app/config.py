@@ -461,9 +461,23 @@ class Settings:
                 self.tongyi.dashscope_api_key != DEFAULT_DASHSCOPE_API_KEY
             ), "DashScope API密钥未配置"
             if self.app.environment in ("staging", "production"):
+                production_placeholders = (
+                    "CHANGE_THIS",
+                    "your-secret-key-here-change-in-production",
+                    "your-dashscope-api-key-here",
+                    "user:password@",
+                    "/ai_assistant",
+                )
                 assert (
                     self.jwt.secret_key != DEFAULT_JWT_SECRET_KEY
                 ), "生产/预发布环境必须配置JWT密钥"
+                assert not any(
+                    marker in self.database.database_url
+                    for marker in production_placeholders
+                ), "生产/预发布环境必须配置真实数据库连接"
+                assert not any(
+                    marker in self.jwt.secret_key for marker in production_placeholders
+                ), "生产/预发布环境必须配置真实JWT密钥"
 
             return True
         except (AssertionError, ValueError) as e:

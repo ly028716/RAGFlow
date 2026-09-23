@@ -18,7 +18,9 @@ npm install
 npm run dev
 ```
 
-开发环境默认将 `/api` 代理到 `http://localhost:8000`。如需覆盖：
+开发环境默认将 `/api` 代理到本机后端 `http://localhost:8000`。生产 Docker
+部署由 Nginx 在容器网络中代理到 `backend:8000`，不使用 Vite 开发代理。如需
+覆盖 API 基础路径：
 
 ```dotenv
 VITE_API_BASE_URL=/api/v1

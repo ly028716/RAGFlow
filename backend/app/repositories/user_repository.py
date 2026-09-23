@@ -2,7 +2,7 @@
 用户数据访问层（Repository）
 
 封装用户相关的数据库操作，提供统一的数据访问接口。
-实现CRUD操作和用户名/邮箱唯一性检查。
+实现CRUD操作和用户字段唯一性检查。
 """
 
 from datetime import datetime
@@ -55,7 +55,7 @@ class UserRepository:
             User: 创建的用户对象
 
         Raises:
-            IntegrityError: 用户名或邮箱已存在时抛出
+            IntegrityError: 用户名或资料邮箱已存在时抛出
         """
         user = User(
             username=username, password_hash=password_hash, email=email, avatar=avatar
@@ -140,7 +140,7 @@ class UserRepository:
             Optional[User]: 更新后的用户对象，用户不存在则返回None
 
         Raises:
-            IntegrityError: 用户名或邮箱已被其他用户使用时抛出
+            IntegrityError: 用户名或资料邮箱已被其他用户使用时抛出
         """
         user = self.get_by_id(user_id)
         if not user:

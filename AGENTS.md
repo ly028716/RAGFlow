@@ -7,7 +7,7 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 RAGFlow is a full-stack RAG (Retrieval-Augmented Generation) knowledge base system with Agent capabilities, built for enterprise-grade knowledge management and intelligent conversation.
 
 **Stack:**
-- Backend: FastAPI 0.104+ + LangChain 1.0 + Python 3.10+
+- Backend: FastAPI 0.104+ + LangChain 0.1.0 + Python 3.10+
 - Frontend: Vue 3 + TypeScript + Vite + Element Plus
 - Databases: MySQL 8.0 (relational), Redis 7.0 (cache), Chroma (vector)
 - LLM: Alibaba Cloud Tongyi Qianwen (DashScope API)

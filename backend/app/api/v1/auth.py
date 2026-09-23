@@ -55,7 +55,7 @@ def register(
         UserResponse: 创建的用户信息
 
     Raises:
-        HTTPException 400: 用户名或邮箱已存在
+        HTTPException 400: 用户名已存在
     """
     auth_service = AuthService(db)
 
@@ -63,7 +63,6 @@ def register(
         user = auth_service.register(
             username=user_data.username,
             password=user_data.password,
-            email=user_data.email,
         )
         return UserResponse.model_validate(user)
     except UserAlreadyExistsError as e:

@@ -11,13 +11,7 @@
   
   <!-- Username Input -->
   <rect x="280" y="150" width="240" height="40" rx="4" ry="4" fill="#FFFFFF" stroke="#DCDFE6" stroke-width="1"/>
-  <text x="290" y="175" font-family="Arial" font-size="14" fill="#909399">用户名/邮箱/手机号</text>
-  
-  <!-- Code Input -->
-  <rect x="280" y="200" width="140" height="40" rx="4" ry="4" fill="#FFFFFF" stroke="#DCDFE6" stroke-width="1"/>
-  <text x="290" y="225" font-family="Arial" font-size="14" fill="#909399">验证码</text>
-  <rect x="430" y="200" width="90" height="40" rx="4" ry="4" fill="#E6A23C" fill-opacity="0.1" stroke="#E6A23C" stroke-width="1"/>
-  <text x="475" y="225" font-family="Arial" font-size="12" fill="#E6A23C" text-anchor="middle">发送验证码</text>
+  <text x="290" y="175" font-family="Arial" font-size="14" fill="#909399">用户名</text>
   
   <!-- Password Input -->
   <rect x="280" y="250" width="240" height="40" rx="4" ry="4" fill="#FFFFFF" stroke="#DCDFE6" stroke-width="1"/>

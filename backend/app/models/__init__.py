@@ -17,7 +17,6 @@ from app.models.message import Message, MessageRole
 from app.models.system_prompt import SystemPrompt
 from app.models.user import User
 from app.models.user_quota import UserQuota
-from app.models.verification_code import VerificationCode
 
 # 导出所有模型
 __all__ = [
@@ -35,7 +34,6 @@ __all__ = [
     "UserQuota",
     "APIUsage",
     "LoginAttempt",
-    "VerificationCode",
     "SystemPrompt",
     "KnowledgeBasePermission",
     "PermissionType",

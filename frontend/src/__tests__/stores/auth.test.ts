@@ -120,13 +120,12 @@ describe('Auth Store', () => {
       })
       
       const store = useAuthStore()
-      const result = await store.register('newuser', 'password123', 'new@example.com')
+      const result = await store.register('newuser', 'password123')
       
       expect(result).toBe(true)
       expect(authApi.register).toHaveBeenCalledWith({
         username: 'newuser',
-        password: 'password123',
-        email: 'new@example.com'
+        password: 'password123'
       })
     })
 

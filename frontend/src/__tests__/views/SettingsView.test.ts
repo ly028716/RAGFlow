@@ -77,14 +77,15 @@ describe('SettingsView', () => {
       await flushPromises()
       
       const tabs = wrapper.findAll('.el-tabs__item')
-      expect(tabs.length).toBe(5)
+      expect(tabs.length).toBe(6)
       
       const tabLabels = tabs.map(tab => tab.text())
-      expect(tabLabels).toContain('个人信息')
-      expect(tabLabels).toContain('修改密码')
-      expect(tabLabels).toContain('提示词管理')
-      expect(tabLabels).toContain('账号注销')
-      expect(tabLabels).toContain('关于')
+      expect(tabLabels).toContain('账号设置')
+      expect(tabLabels).toContain('模型与密钥')
+      expect(tabLabels).toContain('向量库配置')
+      expect(tabLabels).toContain('缓存与限流')
+      expect(tabLabels).toContain('统计与健康')
+      expect(tabLabels).toContain('注销详情')
     })
 
     it('should default to profile tab', async () => {
@@ -92,7 +93,7 @@ describe('SettingsView', () => {
       await flushPromises()
       
       const activeTab = wrapper.find('.el-tabs__item.is-active')
-      expect(activeTab.text()).toBe('个人信息')
+      expect(activeTab.text()).toBe('账号设置')
     })
   })
 

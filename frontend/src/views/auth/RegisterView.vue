@@ -2,7 +2,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, Lock, Message } from '@element-plus/icons-vue'
+import { User, Lock } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 
@@ -14,8 +14,6 @@ const loading = ref(false)
 
 const form = reactive({
   username: '',
-  email: '',
-  verificationCode: '',
   password: '',
   confirmPassword: '',
   agreement: false
@@ -52,9 +50,6 @@ const rules: FormRules = {
     { min: 3, max: 50, message: '用户名长度为3-50个字符', trigger: 'blur' },
     { pattern: /^[a-zA-Z0-9_]+$/, message: '用户名只能包含字母、数字和下划线', trigger: 'blur' }
   ],
-  email: [
-    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
-  ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 8, message: '密码长度至少8位', trigger: 'blur' },
@@ -75,9 +70,8 @@ async function handleRegister() {
     loading.value = true
     try {
       const success = await authStore.register(
-        form.username, 
-        form.password, 
-        form.email || undefined
+        form.username,
+        form.password
       )
       if (success) {
         ElMessage.success('注册成功，请登录')
@@ -110,25 +104,13 @@ function goToLogin() {
       label-position="top"
       @submit.prevent="handleRegister"
     >
-      <el-form-item label="用户名/邮箱/手机号" prop="username">
+      <el-form-item label="用户名" prop="username">
         <el-input
           v-model="form.username"
-          placeholder="请输入用户名/邮箱/手机号"
+          placeholder="请输入用户名"
           :prefix-icon="User"
           size="large"
         />
-      </el-form-item>
-
-      <el-form-item label="验证码" prop="verificationCode">
-        <div class="verify-code-row">
-          <el-input
-            v-model="form.verificationCode"
-            placeholder="请输入验证码"
-            :prefix-icon="Message"
-            size="large"
-          />
-          <el-button size="large" :disabled="!form.username" class="send-code-btn">发送验证码</el-button>
-        </div>
       </el-form-item>
 
       <el-form-item label="设置密码 (8位+)" prop="password">
@@ -198,15 +180,6 @@ function goToLogin() {
       color: $text-secondary;
       font-size: 18px;
       font-weight: normal;
-    }
-  }
-
-  .verify-code-row {
-    display: flex;
-    gap: 12px;
-    
-    .send-code-btn {
-      flex-shrink: 0;
     }
   }
 

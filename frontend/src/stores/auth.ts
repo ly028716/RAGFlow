@@ -27,9 +27,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function register(username: string, password: string, email?: string): Promise<boolean> {
+  async function register(username: string, password: string): Promise<boolean> {
     try {
-      await authApi.register({ username, password, email })
+      await authApi.register({ username, password })
       return true
     } catch (error) {
       throw error

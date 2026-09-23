@@ -5,7 +5,6 @@ Auth 注册服务模块
 """
 
 import logging
-from typing import Optional
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -26,7 +25,7 @@ class RegistrationService:
 
     使用方式:
         service = RegistrationService(db)
-        user = service.register("username", "password123", "email@example.com")
+        user = service.register("username", "password123")
     """
 
     def __init__(self, db: Session):
@@ -39,9 +38,7 @@ class RegistrationService:
         self.db = db
         self.user_repo = UserRepository(db)
 
-    def register(
-        self, username: str, password: str, email: Optional[str] = None
-    ) -> User:
+    def register(self, username: str, password: str) -> User:
         """
         用户注册
 
@@ -50,21 +47,15 @@ class RegistrationService:
         Args:
             username: 用户名（必须唯一）
             password: 明文密码（至少8位，包含字母和数字）
-            email: 邮箱地址（可选，必须唯一）
-
         Returns:
             User: 创建的用户对象
 
         Raises:
-            UserAlreadyExistsError: 用户名或邮箱已存在
+            UserAlreadyExistsError: 用户名已存在
         """
         # 检查用户名是否已存在
         if self.user_repo.username_exists(username):
             raise UserAlreadyExistsError(f"用户名 '{username}' 已存在")
-
-        # 检查邮箱是否已存在
-        if email and self.user_repo.email_exists(email):
-            raise UserAlreadyExistsError(f"邮箱 '{email}' 已被注册")
 
         # 加密密码
         password_hash = hash_password(password)
@@ -72,12 +63,12 @@ class RegistrationService:
         # 创建用户
         try:
             user = self.user_repo.create(
-                username=username, password_hash=password_hash, email=email
+                username=username, password_hash=password_hash
             )
             return user
         except IntegrityError:
             self.db.rollback()
-            raise UserAlreadyExistsError("用户名或邮箱已存在")
+            raise UserAlreadyExistsError("用户名已存在")
 
 
 __all__ = [

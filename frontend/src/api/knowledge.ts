@@ -12,8 +12,8 @@ import type {
 
 export const knowledgeApi = {
   // 知识库管理
-  getList(skip = 0, limit = 20): Promise<PaginatedList<KnowledgeBase>> {
-    return request.get('/knowledge-bases', { params: { skip, limit } })
+  getList(skip = 0, limit = 20, keyword = ''): Promise<PaginatedList<KnowledgeBase>> {
+    return request.get('/knowledge-bases', { params: { skip, limit, keyword: keyword || undefined } })
   },
 
   getById(id: number): Promise<KnowledgeBase> {

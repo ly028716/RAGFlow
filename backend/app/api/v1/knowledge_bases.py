@@ -76,6 +76,7 @@ def create_knowledge_base(
 def get_knowledge_bases(
     skip: int = Query(default=0, ge=0, description="跳过的记录数"),
     limit: int = Query(default=20, ge=1, le=100, description="返回的最大记录数"),
+    keyword: str = Query(default="", max_length=100, description="按名称搜索"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -86,6 +87,7 @@ def get_knowledge_bases(
         user_id=current_user.id,
         skip=skip,
         limit=limit,
+        keyword=keyword,
     )
 
     items = []

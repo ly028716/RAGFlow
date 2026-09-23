@@ -73,10 +73,10 @@ function goToRegister() {
       label-position="top"
       @submit.prevent="handleLogin"
     >
-      <el-form-item label="账号" prop="username">
+      <el-form-item label="用户名" prop="username">
         <el-input
           v-model="form.username"
-          placeholder="账号/邮箱/手机号"
+          placeholder="请输入用户名"
           :prefix-icon="User"
           size="large"
         />
