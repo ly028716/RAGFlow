@@ -8,5 +8,7 @@
 - 演示流程：[面试演示脚本](./docs/面试演示脚本.md)
 - 后端说明：[backend/README.md](./backend/README.md)
 - 前端说明：[frontend/README.md](./frontend/README.md)
+- 许可证：[MIT License](./LICENSE)
+- 第三方依赖许可证清单：[THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md)
 
 > 历史 OpenClaw、Web Scraper 和浏览器采集材料不代表当前产品能力。阅读旧文档前请先查看 [历史能力文档归档说明](./docs/历史归档说明.md)。
